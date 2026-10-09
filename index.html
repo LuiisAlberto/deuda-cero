@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Plan Maestro Deuda Cero</title>
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: una columna tipo "estado de cuenta" en el cel; el periodo actual es un ticket de pago perforado. */
+:root{
+  --bg:#F3F4F9; --surface:#FFFFFF; --sunk:#ECEEF6; --ink:#151935; --muted:#535878; --line:#D9DCEA;
+  --accent:#2F3A9E; --accent-ink:#FFFFFF; --accent-soft:#E5E8F8;
+  --ok:#1C7139; --ok-soft:#E1F2E6; --warn:#875200; --warn-soft:#FDF0DA; --bad:#AE2A21; --bad-soft:#FBE7E5;
+  --bar:#3949AB; --bar-done:#1C7139;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D0F1E; --surface:#161A30; --sunk:#1D2240; --ink:#E9EBF8; --muted:#A4A9C8; --line:#2B3052;
+  --accent:#A3ADFF; --accent-ink:#11143A; --accent-soft:#252B5C;
+  --ok:#74D597; --ok-soft:#14301F; --warn:#F3BA62; --warn-soft:#33260F; --bad:#FF8F85; --bad-soft:#3A1917;
+  --bar:#8C98FF; --bar-done:#74D597; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0D0F1E; --surface:#161A30; --sunk:#1D2240; --ink:#E9EBF8; --muted:#A4A9C8; --line:#2B3052;
+  --accent:#A3ADFF; --accent-ink:#11143A; --accent-soft:#252B5C;
+  --ok:#74D597; --ok-soft:#14301F; --warn:#F3BA62; --warn-soft:#33260F; --bad:#FF8F85; --bad-soft:#3A1917;
+  --bar:#8C98FF; --bar-done:#74D597; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
+.wrap{max-width:720px; margin:0 auto; padding-inline:16px; padding-block:20px 48px; display:flex; flex-direction:column; gap:28px}
+h1,h2,h3{font-family:var(--f-display); text-wrap:balance; margin:0; letter-spacing:-0.01em}
+h2{font-size:1.3rem; font-weight:800}
+p{margin:0}
+.eyebrow{font-size:.72rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.mono{font-family:var(--f-mono); font-variant-numeric:tabular-nums; font-feature-settings:"tnum"}
+.muted{color:var(--muted)}
+section{display:flex; flex-direction:column; gap:12px; min-width:0}
+.sec-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap}
+button,input{font:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:6px}
+
+/* ---------- Encabezado ---------- */
+.top{display:flex; flex-direction:column; gap:6px}
+.top h1{font-size:clamp(1.7rem, 6vw, 2.3rem); font-weight:800; line-height:1.1}
+.status{font-size:.82rem; color:var(--muted); display:flex; align-items:center; gap:6px}
+.dot{width:8px; height:8px; border-radius:50%; background:var(--muted); flex:none}
+.dot.on{background:var(--ok)} .dot.warn{background:var(--warn)}
+
+/* ---------- Hero ---------- */
+.hero{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px; display:flex; flex-direction:column; gap:14px}
+.big{font-family:var(--f-display); font-weight:800; font-size:clamp(2.3rem, 11vw, 3.3rem); line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums}
+.meter{height:10px; background:var(--sunk); border-radius:99px; overflow:hidden}
+.meter > i{display:block; height:100%; background:var(--bar-done); border-radius:99px; min-width:2px; transition:width .4s ease}
+.meter-legend{display:flex; justify-content:space-between; gap:8px; font-size:.82rem; color:var(--muted); flex-wrap:wrap}
+.stats{display:grid; grid-template-columns:1fr; gap:10px}
+@media (min-width:600px){ .stats{grid-template-columns:repeat(3, minmax(0,1fr))} }
+.stat{background:var(--sunk); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:2px; min-width:0}
+.stat b{font-family:var(--f-display); font-size:1.15rem; font-weight:800; line-height:1.25}
+.stat .sub{font-size:.82rem; color:var(--muted)}
+.stat.alert{background:var(--bad-soft)} .stat.alert b{color:var(--bad)}
+
+/* ---------- Selector de periodo ---------- */
+.chips{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin; margin-inline:-16px; padding-inline:16px}
+.chip{flex:none; border:1px solid var(--line); background:var(--surface); border-radius:99px; padding:9px 14px; min-height:44px; cursor:pointer; font-weight:600; font-size:.88rem; display:flex; align-items:center; gap:6px; transition:background .15s, border-color .15s}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.chip .now{font-size:.66rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:1px 6px; border-radius:99px; background:var(--accent-soft); color:var(--accent)}
+.chip[aria-pressed="true"] .now{background:var(--accent-ink); color:var(--accent)}
+
+/* ---------- Ticket del periodo ---------- */
+.ticket{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px; display:flex; flex-direction:column; gap:12px; position:relative}
+.t-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap}
+.t-head h3{font-size:1.25rem; font-weight:800}
+.perf{position:relative; border-top:2px dashed var(--line); margin-inline:-18px; height:0}
+.perf::before,.perf::after{content:""; position:absolute; top:-11px; width:20px; height:20px; border-radius:50%; background:var(--bg); border:1px solid var(--line)}
+.perf::before{left:-11px} .perf::after{right:-11px}
+.line{display:flex; justify-content:space-between; align-items:baseline; gap:12px; font-size:.95rem}
+.line .mono{white-space:nowrap}
+.line.total{font-weight:700}
+.line.minus .mono::before{content:"− "; color:var(--muted)}
+.line.free{font-family:var(--f-display); font-size:1.15rem; font-weight:800}
+.line.free.neg{color:var(--bad)}
+.rows{display:flex; flex-direction:column}
+.row{display:grid; grid-template-columns:28px 52px minmax(0,1fr) auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); min-height:56px; cursor:pointer}
+.row:last-child{border-bottom:0}
+.row input[type=checkbox]{width:22px; height:22px; accent-color:var(--ok); cursor:pointer; margin:0}
+.row .date{font-size:.82rem; color:var(--muted); line-height:1.2}
+.row .what{min-width:0; display:flex; flex-direction:column; gap:3px}
+.row .name{font-weight:600}
+.row .amt{text-align:right; font-weight:600}
+.row.done .name,.row.done .amt{color:var(--muted)}
+.row.done .amt{text-decoration:line-through; text-decoration-thickness:1px}
+.tags{display:flex; gap:6px; flex-wrap:wrap}
+.tag{font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:2px 7px; border-radius:6px; background:var(--sunk); color:var(--muted)}
+.tag.liq{background:var(--accent); color:var(--accent-ink)}
+.tag.last{background:var(--ok-soft); color:var(--ok)}
+.tag.late{background:var(--bad-soft); color:var(--bad)}
+.tag.paid{background:var(--ok-soft); color:var(--ok)}
+.tag.est{background:var(--warn-soft); color:var(--warn)}
+.item{border-bottom:1px solid var(--line)} .item:last-child{border-bottom:0}
+.item .row{border-bottom:0}
+.paidedit{display:flex; align-items:center; gap:8px; font-size:.82rem; color:var(--muted); padding:0 0 10px 90px; flex-wrap:wrap}
+.paidedit input{width:120px; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:var(--bg); text-align:right; font-family:var(--f-mono)}
+.note{background:var(--sunk); border-radius:10px; padding:12px 14px; font-size:.9rem; display:flex; flex-direction:column; gap:6px}
+.note strong{font-weight:700}
+
+/* ---------- Deudas ---------- */
+.group{display:flex; flex-direction:column; gap:8px}
+.group h3{font-size:.95rem; font-weight:800; display:flex; justify-content:space-between; gap:8px}
+.debt{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; min-width:0}
+.debt-top{display:flex; justify-content:space-between; gap:10px; align-items:baseline}
+.debt-top .n{font-weight:700}
+.debt-top .s{font-family:var(--f-display); font-weight:800; font-size:1.1rem; font-variant-numeric:tabular-nums}
+.debt .meter{height:6px}
+.debt-meta{display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:.8rem; color:var(--muted)}
+.debt.zero{background:var(--ok-soft); border-color:transparent}
+.debt.zero .s{color:var(--ok)}
+
+/* ---------- Ruta / fases ---------- */
+.chart{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 14px 8px; overflow-x:auto}
+.chart svg{display:block; width:100%; height:auto; min-width:300px}
+.chart text{fill:var(--muted); font-family:var(--f-body); font-size:10px}
+.chart .val{fill:var(--ink); font-family:var(--f-mono); font-size:10px; font-weight:600}
+.chart .val.real{fill:var(--ok)}
+.chart .lbl.cur{fill:var(--ink); font-weight:700}
+.chart .bar{cursor:pointer; outline:none}
+.chart .bar .hit{fill:transparent}
+.chart .bar:hover .hit{fill:var(--sunk)}
+.chart .bar:focus-visible .hit{stroke:var(--accent); stroke-width:2}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:.8rem; color:var(--muted); margin:2px 0 6px}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.sw{display:inline-block; width:12px; height:12px; border-radius:3px; background:var(--bar)}
+.sw.line{height:3px; border-radius:2px; background:var(--ok); width:16px}
+.detail{border-top:1px solid var(--line); margin-top:8px; padding-top:12px; display:flex; flex-direction:column; gap:8px}
+.detail h3{font-size:1.02rem; font-weight:800}
+.kv{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px}
+@media (min-width:600px){ .kv{grid-template-columns:repeat(4, minmax(0,1fr))} }
+.kv div{background:var(--sunk); border-radius:10px; padding:8px 10px; display:flex; flex-direction:column; gap:2px; min-width:0}
+.kv b{font-family:var(--f-mono); font-size:.95rem}
+.kv span{font-size:.75rem; color:var(--muted)}
+.chip-ok{color:var(--ok)} .chip-bad{color:var(--bad)}
+.phases{list-style:none; margin:0; padding:0; display:flex; flex-direction:column}
+.phase{display:grid; grid-template-columns:22px minmax(0,1fr); gap:12px; padding-bottom:18px; position:relative}
+.phase::before{content:""; position:absolute; left:10px; top:20px; bottom:0; width:2px; background:var(--line)}
+.phase:last-child::before{display:none}
+.phase .pin{width:22px; height:22px; border-radius:50%; border:2px solid var(--accent); background:var(--surface); display:grid; place-items:center; font-size:.7rem; font-weight:800; color:var(--accent); z-index:1}
+.phase.past .pin{background:var(--ok); border-color:var(--ok); color:var(--surface)}
+.phase.now .pin{background:var(--accent); color:var(--accent-ink)}
+.phase h3{font-size:1.02rem; font-weight:800}
+.phase .when{font-size:.8rem; color:var(--muted); margin-bottom:4px}
+.phase ul{margin:6px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:3px; font-size:.92rem}
+
+/* ---------- Viajes / reglas ---------- */
+.cards2{display:grid; grid-template-columns:1fr; gap:10px}
+@media (min-width:600px){ .cards2{grid-template-columns:1fr 1fr} }
+.verdict{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px}
+.pill{align-self:flex-start; font-size:.72rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; padding:3px 9px; border-radius:99px}
+.pill.yes{background:var(--ok-soft); color:var(--ok)} .pill.wait{background:var(--warn-soft); color:var(--warn)} .pill.no{background:var(--bad-soft); color:var(--bad)}
+.verdict h3{font-size:1.08rem}
+.rules{counter-reset:r; list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
+.rules li{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px 12px 50px; position:relative; font-size:.93rem}
+.rules li::before{counter-increment:r; content:counter(r); position:absolute; left:14px; top:12px; width:24px; height:24px; border-radius:7px; background:var(--accent-soft); color:var(--accent); font-weight:800; display:grid; place-items:center; font-size:.8rem}
+.rules strong{display:block}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:.9rem}
+th,td{text-align:left; padding:7px 8px; border-bottom:1px solid var(--line)}
+td.r,th.r{text-align:right}
+th{font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700}
+
+/* ---------- Ajustes ---------- */
+details.adj{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:0}
+details.adj summary{cursor:pointer; padding:16px 18px; font-family:var(--f-display); font-weight:800; font-size:1.05rem; list-style:none; display:flex; justify-content:space-between; align-items:center; min-height:44px}
+details.adj summary::-webkit-details-marker{display:none}
+details.adj summary::after{content:"+"; font-size:1.4rem; color:var(--muted)}
+details.adj[open] summary::after{content:"–"}
+.form{padding:0 18px 18px; display:grid; grid-template-columns:1fr; gap:12px}
+@media (min-width:600px){ .form{grid-template-columns:1fr 1fr} }
+.field{display:flex; flex-direction:column; gap:4px; min-width:0}
+.field label{font-size:.85rem; font-weight:600}
+.field .hint{font-size:.78rem; color:var(--muted)}
+.field input[type=number]{padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--bg); font-family:var(--f-mono); min-height:44px; width:100%}
+.check{display:flex; gap:10px; align-items:flex-start; cursor:pointer}
+.check input{width:22px; height:22px; accent-color:var(--accent); margin-top:2px; flex:none}
+.savebar{grid-column:1 / -1; display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+.btn{background:var(--accent); color:var(--accent-ink); border:0; border-radius:10px; padding:11px 18px; font-weight:700; cursor:pointer; min-height:44px}
+.btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
+footer{font-size:.8rem; color:var(--muted); display:flex; flex-direction:column; gap:6px}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important} }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <span class="eyebrow" id="today">Plan maestro · deuda cero</span>
+    <h1>Tu ruta para salir de deudas</h1>
+    <p class="status"><span class="dot" id="dot"></span><span id="storeStatus">Cargando tus pagos…</span></p>
+  </header>
+
+  <section class="hero" aria-labelledby="h-debes">
+    <span class="eyebrow" id="h-debes">Debes hoy</span>
+    <div class="big" id="debes">$77,370.82</div>
+    <div class="meter" aria-hidden="true"><i id="meterBar" style="width:0%"></i></div>
+    <div class="meter-legend"><span id="pagadoTxt">Pagado: $0.00</span><span id="pctTxt">0% del total</span></div>
+    <div class="stats">
+      <div class="stat" id="nextStat"><span class="eyebrow">Próximo pago</span><b id="nextName">—</b><span class="sub" id="nextSub"></span></div>
+      <div class="stat"><span class="eyebrow">Sin préstamos ni tarjetas</span><b id="zeroCore">—</b><span class="sub" id="zeroSub"></span></div>
+      <div class="stat"><span class="eyebrow">Siguiente nómina</span><b id="payday">—</b><span class="sub" id="paydaySub"></span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-periodo">
+    <div class="sec-head"><h2 id="h-periodo">Qué pagar y cuándo</h2><span class="muted" style="font-size:.85rem">Palomea cada pago al hacerlo</span></div>
+    <div class="chips" id="chips" role="group" aria-label="Periodo"></div>
+    <article class="ticket" id="ticket"></article>
+  </section>
+
+  <section aria-labelledby="h-deudas">
+    <div class="sec-head"><h2 id="h-deudas">Todo lo que debes</h2><span class="muted" id="deudasSum" style="font-size:.85rem"></span></div>
+    <div id="debts" class="group" style="gap:18px"></div>
+  </section>
+
+  <section aria-labelledby="h-subs">
+    <div class="sec-head"><h2 id="h-subs">Suscripciones y celular</h2><span class="muted mono" id="subsTotal" style="font-size:.85rem"></span></div>
+    <div class="ticket" style="gap:10px">
+      <div class="rows" id="subsList"></div>
+      <div class="perf" aria-hidden="true"></div>
+      <div class="note"><strong>Tu Spotify y Claude Pro van a débito; las demás, a tarjetas de crédito.</strong> Las de octubre ya se cobraron (unas a inicio y otras a mediados de mes); el plan paga esos cargos con la nómina del 28. Después de esa nómina, cámbialas a tu tarjeta de débito, antes de congelar las de crédito.</div>
+      <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:.92rem">
+        <li><b>Spotify:</b> pagas $80 + $189 del Duo de tus papás = $269. Revisa si un plan Familiar (varias cuentas) les sale en menos y júntense en uno.</li>
+        <li><b>Celular:</b> cada $100 que le bajes son $1,200 al año para tu fondo.</li>
+        <li><b>Streaming:</b> tienes Netflix, Prime, Google y Crunchyroll. Pausar uno o dos mientras dura el plan es dinero directo al fondo.</li>
+        <li><b>Seguro Banamex Vida ($192.49):</b> aparece en tu estado de cuenta de Banamex. Revisa si lo contrataste a propósito; si no lo necesitas, pide cancelarlo.</li>
+        <li><b>Débito:</b> tu Spotify (día 5) ya se cobró este mes y Claude Pro cae el 29, un día después de tu nómina. Ninguno toca tu efectivo de octubre.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-ruta">
+    <div class="sec-head"><h2 id="h-ruta">La ruta, fase por fase</h2></div>
+    <div class="chart" id="chart" aria-label="Deuda restante al cierre de cada periodo"></div>
+    <ol class="phases" id="phases"></ol>
+  </section>
+
+  <section aria-labelledby="h-viajes">
+    <h2 id="h-viajes">¿Kayak y Acapulco?</h2>
+    <div class="cards2" id="trips"></div>
+  </section>
+
+  <section aria-labelledby="h-reglas">
+    <h2 id="h-reglas">Reglas para no volver a caer</h2>
+    <ol class="rules">
+      <li><strong>Cero compras nuevas con tarjeta.</strong>Primero pasa tus suscripciones a débito; luego, cada vez que liquides Klar, Stori, Bradescard o Plata, congélala en la app. No hace falta cancelarla.</li>
+      <li><strong>Paga siempre en fecha, aunque sea el mínimo.</strong>Así sigues al corriente en Buró y no te cobran comisión por atraso. Solo en Banamex pagaste $487 de comisiones en el último año.</li>
+      <li><strong>En Banamex paga el "pago para no generar intereses", no el mínimo.</strong>Ese monto ya incluye tus diferidos, Netflix y el seguro. Lo que quede sin pagar cobra 62% anual.</li>
+      <li><strong>Antes de liquidar, pide el monto exacto en la app.</strong>Las tarjetas suman intereses en cada corte, así que el monto puede ser un poco mayor. En los préstamos, liquidar antes suele salir más barato que la suma de cuotas.</li>
+      <li><strong>Lo que sobra es tu fondo, no gasto extra.</strong>Ese dinero es lo que evita que vuelvas a usar la tarjeta en una emergencia. Meta: juntar un mes de sueldo.</li>
+      <li><strong>En la mañana, combi en vez de taxi.</strong>Son $12 contra $35: ahorras $23 al día (≈ $506 al mes). De noche, siempre taxi.</li>
+    </ol>
+    <div class="ticket" style="gap:8px">
+      <span class="eyebrow">Tu transporte por día</span>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Tramo</th><th class="r">Con taxi en la mañana</th><th class="r">Con combi en la mañana</th></tr></thead>
+        <tbody class="mono">
+          <tr><td style="font-family:var(--f-body)">Ida: taxi o combi · camión · metro</td><td class="r">$85</td><td class="r">$62</td></tr>
+          <tr><td style="font-family:var(--f-body)">Regreso: metro · camión · taxi (después de las 10 pm: $40)</td><td class="r">$90</td><td class="r">$90</td></tr>
+          <tr><td style="font-family:var(--f-body)"><b>Total al día</b></td><td class="r"><b>$175</b></td><td class="r"><b>$152</b></td></tr>
+          <tr><td style="font-family:var(--f-body)">22 días</td><td class="r">$3,850</td><td class="r">$3,344</td></tr>
+        </tbody>
+      </table></div>
+      <p class="muted" style="font-size:.85rem">El plan usa $152 al día (combi de $12 en la mañana, taxi de $40 en la noche).</p>
+    </div>
+  </section>
+
+  <details class="adj" id="adj">
+    <summary>Ajustes del plan</summary>
+    <form class="form" id="adjForm" novalidate>
+      <label class="check field" for="banamexLiquidar" style="flex-direction:row"><input type="checkbox" id="banamexLiquidar"><span><b>Liquidar Banamex con el aguinaldo</b><br><span class="hint">Tus diferidos cobran 15% anual: es tu deuda más barata. Liquidarla con el aguinaldo te ahorra unos $400 de intereses. Es opcional: primero arma tu colchón.</span></span></label>
+      <div class="field"><label for="storiMin">Stori TC: pago mínimo de octubre</label><input type="number" id="storiMin" min="0" step="0.01" inputmode="decimal"><span class="hint">La app no lo muestra; el plan usa $220 como estimado.</span></div>
+      <div class="field"><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $1,313.49 (incluye celular y seguro de Banamex). Si bajas el celular o quitas algo, cámbialo aquí.</span></div>
+      <div class="field"><label for="debito">Suscripciones a débito al mes</label><input type="number" id="debito" min="0" step="1" inputmode="decimal"><span class="hint">Spotify $80 (día 5) + Claude Pro $400 (día 29). Claude cuesta 20 dólares, así que en pesos varía entre $350 y $400; el plan usa $400 para ir seguro.</span></div>
+      <div class="field"><label for="otros">Otros gastos tuyos al mes</label><input type="number" id="otros" min="0" step="1" inputmode="decimal"><span class="hint">Comida fuera, cosas personales. Si lo dejas en 0, todo lo que sobra se ve como ahorro.</span></div>
+      <div class="field"><label for="acapulco">Tu parte del viaje a Acapulco</label><input type="number" id="acapulco" min="0" step="1" inputmode="decimal"><span class="hint">Sale de la nómina del 28 de diciembre.</span></div>
+      <div class="savebar"><button class="btn" type="submit" id="saveBtn">Guardar ajustes</button><button class="btn ghost" type="button" id="resetBtn">Volver a los valores del plan</button><span class="muted" id="saveMsg" role="status" style="font-size:.85rem"></span></div>
+    </form>
+  </details>
+
+  <footer>
+    <p>Cifras con los datos que diste el 7 de octubre de 2026 y tu estado de cuenta Banamex con corte al 8 de septiembre. El mínimo de Stori TC es estimado. Antes de cada liquidación, confirma el monto en la app.</p>
+    <p>No soy asesor financiero: esto es un plan de flujo de efectivo para que decidas con números claros.</p>
+  </footer>
+</main>
+
+<script>
+/* ===== Motor del plan (todo en centavos) ===== */
+const MES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const MES_L = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const D = (y, m, d) => y * 10000 + m * 100 + d;            // m: 1..12
+const dY = n => Math.floor(n / 10000), dM = n => Math.floor(n / 100) % 100, dD = n => n % 100;
+const lastDay = (y, m) => new Date(y, m, 0).getDate();
+const addM = (y, m, k) => { const t = (y * 12 + (m - 1)) + k; return [Math.floor(t / 12), (t % 12) + 1]; };
+const fmtD = n => `${dD(n)} ${MES[dM(n) - 1]}`;
+const fmtDY = n => `${dD(n)} ${MES[dM(n) - 1]} ${String(dY(n)).slice(2)}`;
+const toInt = dt => D(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+const daysBetween = (a, b) => Math.round((new Date(dY(b), dM(b) - 1, dD(b)) - new Date(dY(a), dM(a) - 1, dD(a))) / 864e5);
+
+const AGUINALDO = D(2026, 12, 15);   // fecha estimada (~15 dic)
+/* Suscripciones y celular (datos tuyos, mensuales). Hoy se cobran a tarjetas de crédito. */
+const SUBS = [
+  { name: "Netflix (en Banamex)", c: 26900, pay: "tc" }, { name: "Google", c: 16500, pay: "tc" },
+  { name: "Amazon Prime", c: 12900, pay: "tc" }, { name: "Plan de celular", c: 36900, pay: "tc" },
+  { name: "Spotify Duo (tus papás)", c: 18900, pay: "tc" },
+  { name: "Seguro Banamex Vida", c: 19249, pay: "tc", flag: "¿Lo necesitas?" },
+  { name: "Spotify (tuyo)", c: 8000, pay: "deb", day: "Día 5" },
+  { name: "Claude Pro (20 USD · $350–$400)", c: 40000, pay: "deb", day: "Día 29" },
+];
+/* Banamex: estado de cuenta con corte 8 sep 2026. 3 diferimientos al 15% anual + 2 compras Amazon a MSI.
+   Pago mensual (capital + interés + IVA del interés) con fecha límite ~28 de cada mes. */
+const BANAMEX_SCHED = [166401, 166201, 166000, 128291, 82953, 82820, 82683, 82546, 82403, 36235, 36173];
+const SUBS_TC = SUBS.filter(x => x.pay === "tc").reduce((s, x) => s + x.c, 0);
+const SUBS_DEB = SUBS.filter(x => x.pay === "deb").reduce((s, x) => s + x.c, 0);
+const SUBS_TOTAL = SUBS_TC + SUBS_DEB;
+const CRUNCHY = 28475, CRUNCHY_P = [7, 8, 9, 10];   // anualidad Crunchyroll en 4 pagos, abr–jul 2027
+/* A débito: Spotify (día 5; el de octubre ya se cobró) y Claude Pro (día 29): un cargo de cada uno por periodo desde el 28 oct. */
+const NP = 16;
+
+function buildPeriods() {
+  const ps = [];
+  ps.push({ n: 1, start: D(2026, 10, 7) });
+  for (let k = 2; k <= NP + 1; k++) { const [y, m] = addM(2026, 10, k - 2); ps.push({ n: k, start: D(y, m, 28) }); }
+  for (let i = 0; i < NP; i++) {
+    const nx = ps[i + 1].start; const dt = new Date(dY(nx), dM(nx) - 1, dD(nx) - 1);
+    ps[i].end = toInt(dt);
+    ps[i].name = i === 0 ? "Arranque" : `Nómina 28 ${MES[dM(ps[i].start) - 1]}`;
+    ps[i].range = i === 0 ? `7 – 27 oct` : `${fmtD(ps[i].start)} – ${fmtD(ps[i].end)}`;
+    ps[i].short = i === 0 ? "Arr." : `${MES[dM(ps[i].start) - 1]} ${String(dY(ps[i].start)).slice(2)}`;
+  }
+  return ps.slice(0, NP);
+}
+const PERIODS = buildPeriods();
+const periodOf = d => { for (let i = PERIODS.length - 1; i >= 0; i--) if (d >= PERIODS[i].start) return d <= PERIODS[i].end ? i + 1 : null; return null; };
+const HORIZON = PERIODS[NP - 1].end;
+
+/* Fechas de un calendario de pagos */
+function monthlyDates(y, m, day, count) {           // day: número o "eom"
+  const out = [];
+  for (let k = 0; out.length < count; k++) {
+    const [yy, mm] = addM(y, m, k);
+    const d = day === "eom" ? lastDay(yy, mm) : Math.min(day, lastDay(yy, mm));
+    out.push(D(yy, mm, d));
+  }
+  return out;
+}
+function quincenalDates(first, days, count) {        // days: [14,28] o [15,30]
+  const out = []; let y = dY(first), m = dM(first);
+  while (out.length < count) {
+    for (const d0 of days) {
+      const d = D(y, m, Math.min(d0, lastDay(y, m)));
+      if (d >= first && out.length < count) out.push(d);
+    }
+    [y, m] = addM(y, m, 1);
+  }
+  return out;
+}
+
+/* Deudas: datos tuyos. c = centavos */
+function buildDebts(aj) {
+  const storiMin = Math.round(aj.storiMin * 100);
+  const L = (d) => d;   // fecha de liquidación
+  return [
+    { key: "digitt", cat: "Préstamo", name: "Digitt", cuota: 169000, saldo: 845000, freq: "Mensual · fin de mes",
+      sched: monthlyDates(2026, 11, "eom", 5).map(d => [d, 169000]), kind: "cuota", liq: L(AGUINALDO),
+      info: "Pago 7 de 12 · faltan 5" },
+    { key: "nupres", cat: "Préstamo", name: "Nu Préstamo", cuota: 97250, saldo: 1361500, freq: "Mensual · fin de mes",
+      sched: monthlyDates(2026, 11, "eom", 14).map(d => [d, 97250]), kind: "cuota", liq: L(AGUINALDO),
+      info: "Pago 2 de 16 · faltan 14" },
+    { key: "storipres", cat: "Préstamo", name: "Stori Préstamo", cuota: 90631, saldo: 1178203, freq: "Quincenal · 15 y 30",
+      sched: quincenalDates(D(2026, 10, 15), [15, 30], 13).map(d => [d, 90631]), kind: "cuota", liq: L(AGUINALDO),
+      info: "Pago 5 de 18 · faltan 13" },
+    { key: "creditea", cat: "Préstamo", name: "Creditea", cuota: 48691, saldo: 632983, freq: "Quincenal · 14 y 28",
+      sched: quincenalDates(D(2026, 10, 14), [14, 28], 13).map(d => [d, 48691]), kind: "cuota", liq: L(AGUINALDO),
+      info: "11 de 24 pagados · faltan 13" },
+    { key: "plata", cat: "Tarjeta", name: "Plata Card", cuota: 31514, saldo: 524830, freq: "Mensual · día 10",
+      sched: monthlyDates(2026, 10, 10, 40).map(d => [d, 31514]), kind: "minimo", liq: L(D(2026, 11, 28)),
+      info: "Mínimo $315.14" },
+    { key: "storitc", cat: "Tarjeta", name: "Stori TC", cuota: storiMin, saldo: 214211, freq: "Mensual · día 12",
+      sched: monthlyDates(2026, 10, 12, 40).map(d => [d, storiMin]), kind: "minimo", liq: L(D(2026, 10, 28)),
+      info: "Mínimo estimado (la app no lo muestra)", est: true },
+    { key: "bradescard", cat: "Tarjeta", name: "Bradescard", cuota: 112677, saldo: 275812, freq: "Mensual · día 13",
+      sched: monthlyDates(2026, 10, 13, 40).map(d => [d, 112677]), kind: "minimo", liq: L(D(2026, 10, 28)),
+      info: "Mínimo $1,126.77" },
+    { key: "klar", cat: "Tarjeta", name: "Klar", cuota: 66593, saldo: 204214, freq: "Mensual · día 15",
+      sched: monthlyDates(2026, 10, 15, 40).map(d => [d, 66593]), kind: "minimo", liq: L(D(2026, 10, 28)),
+      info: "Mínimo $665.93" },
+    { key: "nutc", cat: "Tarjeta", name: "Nu TC", cuota: 195256, saldo: 542279, freq: "Diferido · fin de mes",
+      sched: [[D(2026, 10, 31), 195256], [D(2026, 11, 30), 130931], [D(2026, 12, 31), 130931],
+              [D(2027, 1, 31), 28387], [D(2027, 2, 28), 28387], [D(2027, 3, 31), 28387]], kind: "cuota", liq: null,
+      info: "Oct $1,952.56 · nov–dic $1,309.31 · ene–mar $283.87" },
+    { key: "banamex", cat: "Tarjeta", name: "Banamex", cuota: BANAMEX_SCHED[0], saldo: BANAMEX_SCHED.reduce((s, x) => s + x, 0),
+      freq: "Mensual · día 28 (corte día 8)",
+      sched: monthlyDates(2026, 10, 28, BANAMEX_SCHED.length).map((d, i) => [d, BANAMEX_SCHED[i]]), kind: "cuota",
+      liq: aj.banamexLiquidar ? AGUINALDO : null,
+      info: "3 diferidos al 15% anual + Amazon a meses · baja a $829 en feb y termina en ago 2027" },
+    { key: "conc1", cat: "Concierto", name: "Concierto 1", cuota: 76000, saldo: 152000, freq: "Mensual · día 1",
+      sched: monthlyDates(2026, 11, 1, 2).map(d => [d, 76000]), kind: "cuota", liq: null, info: "1 de 3 pagado · faltan 2" },
+    { key: "conc2", cat: "Concierto", name: "Concierto 2", cuota: 85000, saldo: 425000, freq: "Mensual · día 1",
+      sched: monthlyDates(2026, 11, 1, 5).map(d => [d, 85000]), kind: "cuota", liq: null, info: "1 de 6 pagado · faltan 5" },
+    { key: "conc3", cat: "Concierto", name: "Concierto 3", cuota: 60350, saldo: 181050, freq: "Mensual · día 1",
+      sched: monthlyDates(2026, 11, 1, 3).map(d => [d, 60350]), kind: "cuota", liq: null, info: "Empieza en noviembre · 3 pagos" },
+  ];
+}
+
+/* Plan: cuotas antes de la fecha de liquidación, saldo completo en esa fecha */
+function planDebt(dbt) {
+  const ev = []; let rem = dbt.saldo;
+  for (const [d, a] of dbt.sched) {
+    if (rem <= 0) break;
+    if (dbt.liq && d >= dbt.liq) break;
+    const amt = Math.min(a, rem); if (amt <= 0) continue;
+    rem -= amt;
+    ev.push({ date: d, amount: amt, kind: rem === 0 ? "ultimo" : dbt.kind });
+  }
+  if (dbt.liq && rem > 0) { ev.push({ date: dbt.liq, amount: rem, kind: "liquidar" }); rem = 0; }
+  ev.forEach(e => { e.key = dbt.key; e.period = periodOf(e.date); e.id = `p${e.period}-${dbt.key}-${e.date}`; });
+  dbt.events = ev.filter(e => e.period);
+  const zeroEv = ev.length && rem === 0 ? ev[ev.length - 1] : null;
+  dbt.zeroDate = zeroEv && zeroEv.date <= HORIZON ? zeroEv.date : null;
+  return dbt;
+}
+
+function buildPlan(aj) {
+  const debts = buildDebts(aj).map(planDebt);
+  const periods = PERIODS.map(p => ({ ...p, events: [] }));
+  for (const d of debts) for (const e of d.events) periods[e.period - 1].events.push(e);
+  let carry = 0;
+  const total0 = debts.reduce((s, d) => s + d.saldo, 0);
+  let paidCum = 0;
+  for (const p of periods) {
+    p.events.sort((a, b) => a.date - b.date || a.key.localeCompare(b.key));
+    p.income = (p.n === 1 ? 654621 : 2477700) + (p.start <= AGUINALDO && AGUINALDO <= p.end ? 4955400 : 0);
+    p.aguinaldo = p.start <= AGUINALDO && AGUINALDO <= p.end;
+    p.transporte = (p.n === 1 ? 16 : 22) * 15200;   // combi $12 + camión $45 + metro $5, regreso metro $5 + camión $45 + taxi $40
+    p.citas = p.n === 1 ? 0 : 250000;
+    p.extra = dM(p.start) === 12 && dY(p.start) === 2026 ? Math.round(aj.acapulco * 100) : 0;
+    p.otros = Math.round(aj.otros * 100 * (p.n === 1 ? 16 / 22 : 1));
+    const subsC = Math.round(aj.subs * 100);
+    p.subs = p.n === 1 ? 0 : p.n === 2 ? 2 * subsC : subsC;      // oct ya va en tarjeta: se paga con la nómina del 28
+    p.debito = p.n === 1 ? 0 : Math.round(aj.debito * 100);
+    p.crunchy = CRUNCHY_P.includes(p.n) ? CRUNCHY : 0;
+    p.debt = p.events.reduce((s, e) => s + e.amount, 0);
+    p.free = p.income - p.transporte - p.citas - p.extra - p.otros - p.subs - p.crunchy - p.debito - p.debt;
+    p.carryIn = carry; carry += p.free; p.cum = carry;
+    paidCum += p.debt; p.remaining = total0 - paidCum;
+  }
+  const lastDate = list => list.reduce((m, d) => d.zeroDate === null ? Infinity : Math.max(m, d.zeroDate), 0);
+  const zAll = lastDate(debts), zCore = lastDate(debts.filter(d => d.key !== "banamex"));
+  return { debts, periods, total0, zAll, zCore };
+}
+
+const money = c => (c < 0 ? "-$" : "$") + (Math.abs(c) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money0 = c => (c < 0 ? "-$" : "$") + Math.round(Math.abs(c) / 100).toLocaleString("en-US");
+const monthYear = n => n === Infinity || !n ? "después de ene 2028" : `${MES_L[dM(n) - 1]} ${dY(n)}`;
+
+if (typeof module !== "undefined") module.exports = { buildPlan, PERIODS, money, fmtD, monthYear, AGUINALDO, SUBS_TOTAL };
+
+
+/* ===== App ===== */
+const DEFAULT_AJ = { banamexLiquidar: false, storiMin: 220, otros: 0, acapulco: 4000, subs: 1313.49, debito: 480 };
+const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago" };
+const CAT_LABEL = { "Préstamo": "Préstamos", "Tarjeta": "Tarjetas", "Concierto": "Conciertos" };
+const PNOTE = {
+  1: "<strong>Modo contención.</strong> Solo mínimos y cuotas obligatorias para seguir al corriente en Buró. Nada de salidas pagadas ni compras con tarjeta hasta el 28. Tus suscripciones de octubre ya se cobraron a tus tarjetas: se pagan con la nómina del 28.",
+  2: "<strong>El kayak va aquí.</strong> Sale de los $2,500 de citas (a mitades con tu novia). <strong>Pasa tus suscripciones a tu tarjeta de débito</strong> antes de congelar las de crédito. Lo que sobra guárdalo: es tu colchón para no volver a usar tarjetas.",
+  3: "<strong>Llega el aguinaldo (~15 dic).</strong> Paga primero las cuotas del 28 al 30 de noviembre con tu nómina; cuando caiga el aguinaldo pide en cada app el monto para liquidar y paga todo.",
+  4: "<strong>Acapulco.</strong> Tu parte del viaje ya está apartada en este periodo, de contado.",
+};
+const S = { aj: { ...DEFAULT_AJ }, paid: {}, sel: null, store: "none", canWrite: true, db: null, plan: null };
+const TODAY = toInt(new Date());
+const CUR = periodOf(TODAY) || (TODAY < PERIODS[0].start ? 1 : NP);
+S.sel = CUR;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = (v, d, lo = 0, hi = 1e7) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
+function sanitizeAj(a) {
+  return { banamexLiquidar: !!a.banamexLiquidar, storiMin: num(a.storiMin, 220), otros: num(a.otros, 0), acapulco: num(a.acapulco, 4000), subs: num(a.subs, 1313.49), debito: num(a.debito, 480) };
+}
+
+/* ---------- Guardado ---------- */
+const LS = "deudacero.v1";
+function lsLoad() { try { const x = JSON.parse(localStorage.getItem(LS) || "{}"); if (x.paid) S.paid = x.paid; if (x.aj) S.aj = sanitizeAj({ ...DEFAULT_AJ, ...x.aj }); } catch (e) {} }
+function lsSave() { try { localStorage.setItem(LS, JSON.stringify({ paid: S.paid, aj: S.aj })); } catch (e) {} }
+function setStatus(kind, txt) { $("dot").className = "dot " + kind; $("storeStatus").textContent = txt; }
+
+async function initStore() {
+  let db = null, user = null;
+  try { if (window.claude && window.claude.use) [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]); } catch (e) {}
+  if (!db) { S.store = "local"; lsLoad(); recompute(); syncForm(); setStatus("warn", "Tus marcas se guardan solo en este dispositivo."); return; }
+  S.db = db; S.store = "db";
+  if (user) { try { if ((await user.isOwner()) === false) S.canWrite = false; } catch (e) {} }
+  setStatus(S.canWrite ? "on" : "warn", S.canWrite ? "Tus pagos se guardan en tu cuenta." : "Solo lectura: esta página es de Luis.");
+  db.collection("pagos").onSnapshot(snap => {
+    const m = {};
+    snap.docs.forEach(d => { const x = d.data(); if (x) m[d.id] = { monto: Math.round(num(x.monto, 0)), fecha: String(x.fecha || "") }; });
+    S.paid = m; render();
+  }, () => setStatus("warn", "No se pudieron leer tus pagos. Recarga la página."));
+  db.doc("ajustes/plan").onSnapshot(s => {
+    if (s.exists) { S.aj = sanitizeAj({ ...DEFAULT_AJ, ...s.data() }); recompute(); syncForm(); }
+  }, () => {});
+}
+async function markPaid(ev, on) {
+  if (!S.canWrite) return;
+  if (on) S.paid[ev.id] = { monto: ev.amount, fecha: String(TODAY) }; else delete S.paid[ev.id];
+  render();
+  if (S.store === "db") {
+    try {
+      const ref = S.db.collection("pagos").doc(ev.id);
+      if (on) await ref.set({ deuda: ev.key, periodo: ev.period, fechaPlan: ev.date, monto: ev.amount, fecha: String(TODAY) });
+      else await ref.delete();
+    } catch (e) { setStatus("warn", "No se guardó el último cambio. Revisa tu conexión."); }
+  } else lsSave();
+}
+async function editPaid(ev, pesos) {
+  const c = Math.round(num(pesos, ev.amount / 100) * 100);
+  if (!S.paid[ev.id] || S.paid[ev.id].monto === c) return;
+  S.paid[ev.id] = { ...S.paid[ev.id], monto: c }; render();
+  if (S.store === "db") { try { await S.db.collection("pagos").doc(ev.id).update({ monto: c }); } catch (e) { setStatus("warn", "No se guardó el monto. Revisa tu conexión."); } }
+  else lsSave();
+}
+
+/* ---------- Cálculo ---------- */
+function recompute() { S.plan = buildPlan(S.aj); render(); }
+function realState() {
+  const P = S.plan; const byKey = {};
+  for (const d of P.debts) byKey[d.key] = { paid: 0, closed: false };
+  for (const d of P.debts) for (const e of d.events) {
+    const p = S.paid[e.id]; if (!p) continue;
+    byKey[d.key].paid += p.monto;
+    if (e.kind === "liquidar" || e.kind === "ultimo") byKey[d.key].closed = true;
+  }
+  let rem = 0, paid = 0;
+  for (const d of P.debts) { const k = byKey[d.key]; k.rem = k.closed ? 0 : Math.max(0, d.saldo - k.paid); rem += k.rem; paid += k.paid; }
+  return { byKey, rem, paid };
+}
+
+/* ---------- Render ---------- */
+function render() {
+  if (!S.plan) return;
+  const P = S.plan, R = realState();
+  $("today").textContent = `Plan maestro · hoy ${fmtDY(TODAY)}`;
+  // hero
+  $("debes").textContent = money(R.rem);
+  const pct = P.total0 ? Math.min(100, Math.round((1 - R.rem / P.total0) * 1000) / 10) : 0;
+  $("meterBar").style.width = pct + "%";
+  $("pagadoTxt").textContent = `Pagado: ${money(R.paid)} de ${money(P.total0)}`;
+  $("pctTxt").textContent = `${pct}% liquidado`;
+  const all = P.debts.flatMap(d => d.events).sort((a, b) => a.date - b.date);
+  const next = all.find(e => !S.paid[e.id]);
+  const ns = $("nextStat");
+  if (next) {
+    const dn = P.debts.find(d => d.key === next.key).name, dd = daysBetween(TODAY, next.date);
+    $("nextName").textContent = `${dn} · ${money(next.amount)}`;
+    $("nextSub").textContent = dd < 0 ? `Vencido desde el ${fmtD(next.date)} (${-dd} días)` : dd === 0 ? `Hoy, ${fmtD(next.date)}` : `${fmtD(next.date)} · en ${dd} ${dd === 1 ? "día" : "días"}`;
+    ns.classList.toggle("alert", dd < 0);
+  } else { $("nextName").textContent = "Nada pendiente"; $("nextSub").textContent = "Todo lo del plan está pagado"; ns.classList.remove("alert"); }
+  $("zeroCore").textContent = P.zCore === Infinity ? "Fuera del plan" : `${dD(P.zCore)} ${MES[dM(P.zCore) - 1]} ${dY(P.zCore)}`;
+  const ban = P.debts.find(d => d.key === "banamex");
+  $("zeroSub").textContent = S.aj.banamexLiquidar ? "Incluye Banamex: lo liquidas con el aguinaldo" : `Banamex a plazo termina ${ban.zeroDate ? monthYear(ban.zeroDate) : "después del plan"}`;
+  const nxtPay = PERIODS.find(p => p.n > 1 && p.start >= TODAY) || null;
+  if (nxtPay) { const dd = daysBetween(TODAY, nxtPay.start); $("payday").textContent = dd === 0 ? "Hoy" : `En ${dd} ${dd === 1 ? "día" : "días"}`; $("paydaySub").textContent = `${fmtDY(nxtPay.start)} · ${money(2477700)}`; }
+  renderChips(); renderTicket(R); renderDebts(R); renderSubs(); renderChart(); renderPhases(); renderTrips();
+}
+
+function renderChips() {
+  const el = $("chips"); const last = Math.max(8, Math.min(NP, periodOf(Math.min(S.plan.zAll === Infinity ? HORIZON : S.plan.zAll, HORIZON)) || NP));
+  if (el.childElementCount !== last) {
+    el.innerHTML = PERIODS.slice(0, last).map(p => `<button type="button" class="chip" data-p="${p.n}">${esc(p.n === 1 ? "7–27 oct" : p.name.replace("Nómina ", "Nómina "))}${p.n === CUR ? '<span class="now">Ahora</span>' : ""}</button>`).join("");
+    el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { S.sel = Number(b.dataset.p); S.detail0 = false; render(); }));
+    const cur = el.querySelector(`[data-p="${S.sel}"]`); if (cur) setTimeout(() => cur.scrollIntoView({ block: "nearest", inline: "center" }), 0);
+  }
+  el.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.p) === S.sel)));
+}
+
+function renderTicket(R) {
+  const p = S.plan.periods[S.sel - 1]; const names = Object.fromEntries(S.plan.debts.map(d => [d.key, d]));
+  const paidSum = p.events.reduce((s, e) => s + (S.paid[e.id] ? S.paid[e.id].monto : 0), 0);
+  const pending = p.events.filter(e => !S.paid[e.id]).reduce((s, e) => s + e.amount, 0);
+  const incomeLbl = p.n === 1 ? "Efectivo que tienes" : p.aguinaldo ? "Nómina + aguinaldo" : "Nómina";
+  const rows = p.events.map(e => {
+    const d = names[e.key], isPaid = !!S.paid[e.id], late = !isPaid && e.date < TODAY;
+    const when = e.kind === "liquidar" && e.date === AGUINALDO ? "Aguin." : fmtD(e.date);
+    const tags = [`<span class="tag ${e.kind === "liquidar" ? "liq" : e.kind === "ultimo" ? "last" : ""}">${KIND[e.kind]}</span>`];
+    if (d.est) tags.push('<span class="tag est">Estimado</span>');
+    if (late) tags.push('<span class="tag late">Vencido</span>');
+    if (isPaid) tags.push('<span class="tag paid">Pagado</span>');
+    const edit = isPaid ? `<div class="paidedit"><label for="m-${e.id}">Pagaste</label><input class="mono" type="number" step="0.01" min="0" id="m-${e.id}" data-ev="${e.id}" value="${(S.paid[e.id].monto / 100).toFixed(2)}" ${S.canWrite ? "" : "disabled"}></div>` : "";
+    return `<div class="item"><label class="row ${isPaid ? "done" : ""}" for="c-${e.id}">
+      <input type="checkbox" id="c-${e.id}" data-ev="${e.id}" ${isPaid ? "checked" : ""} ${S.canWrite ? "" : "disabled"} aria-label="Marcar ${esc(d.name)} ${money(e.amount)} como pagado">
+      <span class="date mono">${when}</span>
+      <span class="what"><span class="name">${esc(d.name)}</span><span class="tags">${tags.join("")}</span></span>
+      <span class="amt mono">${money(e.amount)}</span></label>${edit}</div>`;
+  }).join("");
+  const reserve = p.transporte + p.citas + p.extra + p.otros + p.subs + p.crunchy + p.debito;
+  $("ticket").innerHTML = `
+    <div class="t-head"><div><span class="eyebrow">${p.n === 1 ? "Antes de la nómina" : "Periodo de nómina"}</span><h3>${esc(p.n === 1 ? "Arranque" : p.name)}</h3><span class="muted" style="font-size:.85rem">${esc(p.range)}${p.n === 1 ? "" : " " + String(dY(p.end))}</span></div>
+      <div style="text-align:right"><span class="eyebrow">Te falta pagar</span><div class="mono" style="font-weight:700;font-size:1.1rem;color:${pending ? "var(--ink)" : "var(--ok)"}">${money(pending)}</div></div></div>
+    <div class="line total"><span>${incomeLbl}</span><span class="mono">${money(p.income)}</span></div>
+    ${p.carryIn ? `<div class="line"><span class="muted">Traes ahorrado de antes</span><span class="mono muted">${money(p.carryIn)}</span></div>` : ""}
+    <div class="line minus"><span>Aparta transporte (${p.n === 1 ? 16 : 22} días × $152)</span><span class="mono">${money(p.transporte)}</span></div>
+    ${p.citas ? `<div class="line minus"><span>Aparta citas con tu novia</span><span class="mono">${money(p.citas)}</span></div>` : ""}
+    ${p.extra ? `<div class="line minus"><span>Aparta tu parte de Acapulco</span><span class="mono">${money(p.extra)}</span></div>` : ""}
+    ${p.subs ? `<div class="line minus"><span>${p.n === 2 ? "Suscripciones en tarjeta (oct, que ya se cobró, + nov)" : "Suscripciones en tarjeta"}</span><span class="mono">${money(p.subs)}</span></div>` : ""}
+    ${p.debito ? `<div class="line minus"><span>A débito: Spotify (día 5) y Claude Pro (día 29)</span><span class="mono">${money(p.debito)}</span></div>` : ""}
+    ${p.crunchy ? `<div class="line minus"><span>Crunchyroll anual (1 de 4 pagos)</span><span class="mono">${money(p.crunchy)}</span></div>` : ""}
+    ${p.otros ? `<div class="line minus"><span>Otros gastos tuyos</span><span class="mono">${money(p.otros)}</span></div>` : ""}
+    <div class="perf" aria-hidden="true"></div>
+    <div class="sec-head"><span class="eyebrow">Pagos de este periodo (${p.events.length})</span><span class="mono muted" style="font-size:.85rem">${money(p.debt)}</span></div>
+    <div class="rows">${rows || '<p class="muted">Sin pagos de deudas en este periodo.</p>'}</div>
+    <div class="perf" aria-hidden="true"></div>
+    <div class="line free ${p.free < 0 ? "neg" : ""}"><span>Te queda libre</span><span class="mono">${money(p.free)}</span></div>
+    <div class="line"><span class="muted">Ahorro acumulado al cierre</span><span class="mono" style="color:${p.cum < 0 ? "var(--bad)" : "var(--ok)"};font-weight:700">${money(p.cum)}</span></div>
+    ${paidSum ? `<div class="line"><span class="muted">Ya pagaste en este periodo</span><span class="mono muted">${money(paidSum)}</span></div>` : ""}
+    ${PNOTE[p.n] ? `<div class="note">${PNOTE[p.n]}</div>` : ""}`;
+  $("ticket").querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener("change", () => {
+    const ev = p.events.find(e => e.id === cb.dataset.ev); markPaid(ev, cb.checked);
+  }));
+  $("ticket").querySelectorAll('.paidedit input').forEach(inp => {
+    inp.addEventListener("change", () => { const ev = p.events.find(e => e.id === inp.dataset.ev); editPaid(ev, inp.value); });
+  });
+}
+
+function renderDebts(R) {
+  const P = S.plan; const groups = ["Préstamo", "Tarjeta", "Concierto"];
+  $("deudasSum").textContent = `${P.debts.filter(d => R.byKey[d.key].rem > 0).length} activas de ${P.debts.length}`;
+  $("debts").innerHTML = groups.map(g => {
+    const ds = P.debts.filter(d => d.cat === g); const tot = ds.reduce((s, d) => s + R.byKey[d.key].rem, 0);
+    return `<div class="group"><h3><span>${CAT_LABEL[g]}</span><span class="mono">${money(tot)}</span></h3>${ds.map(d => {
+      const k = R.byKey[d.key], pc = d.saldo ? Math.round((1 - k.rem / d.saldo) * 100) : 100;
+      const end = d.zeroDate ? (d.events.length && d.events[d.events.length - 1].kind === "liquidar" ? `Se liquida ${d.zeroDate === AGUINALDO ? "con el aguinaldo" : "el " + fmtDY(d.zeroDate)}` : `Último pago ${fmtDY(d.zeroDate)}`) : "Termina después del plan";
+      return `<div class="debt ${k.rem === 0 ? "zero" : ""}">
+        <div class="debt-top"><span class="n">${esc(d.name)}${d.est ? ' <span class="tag est">Estimado</span>' : ""}</span><span class="s">${k.rem === 0 ? "Liquidada" : money(k.rem)}</span></div>
+        <div class="meter" aria-hidden="true"><i style="width:${pc}%"></i></div>
+        <div class="debt-meta"><span>${esc(d.info)}</span><span>${esc(d.freq)}</span></div>
+        <div class="debt-meta"><span>Pago: ${money(d.cuota)}</span><span>${esc(end)}</span></div></div>`;
+    }).join("")}</div>`;
+  }).join("");
+}
+
+function renderSubs() {
+  const row = (name, tags, amt) => `<div class="item"><div class="row" style="grid-template-columns:minmax(0,1fr) auto;cursor:default;min-height:44px"><span class="what"><span class="name">${esc(name)}</span><span class="tags">${tags}</span></span><span class="amt mono">${money(amt)}</span></div></div>`;
+  $("subsList").innerHTML = SUBS.map(x => row(x.name,
+      `<span class="tag">${x.day ? esc(x.day) : "Mensual"}</span>${x.pay === "deb" ? '<span class="tag paid">Débito</span>' : '<span class="tag est">Tarjeta de crédito</span>'}${x.flag ? `<span class="tag late">${esc(x.flag)}</span>` : ""}`, x.c)).join("")
+    + row("Crunchyroll anual", '<span class="tag">Abr–jul 2027 · 4 pagos</span>', CRUNCHY);
+  $("subsTotal").textContent = `${money(Math.round((S.aj.subs + S.aj.debito) * 100))} al mes`;
+}
+function realAt(end) {                     // deuda real según lo palomeado hasta la fecha 'end'
+  let rem = 0;
+  for (const d of S.plan.debts) {
+    let paid = 0, closed = false;
+    for (const e of d.events) {
+      const r = S.paid[e.id]; if (!r || (Number(r.fecha) || 0) > end) continue;
+      paid += r.monto; if (e.kind === "liquidar" || e.kind === "ultimo") closed = true;
+    }
+    rem += closed ? 0 : Math.max(0, d.saldo - paid);
+  }
+  return rem;
+}
+function renderChart() {
+  const P = S.plan; const lastP = Math.min(NP, Math.max(6, (P.periods.findIndex(p => p.remaining === 0) + 1) || NP));
+  const data = [{ lbl: "7 oct", v: P.total0, n: 0 }].concat(P.periods.slice(0, lastP).map(p => ({ lbl: p.n === 1 ? "oct" : MES[dM(p.end) - 1], v: p.remaining, n: p.n })));
+  const W = 400, H = 200, padL = 4, padR = 4, padT = 24, padB = 22, n = data.length, ch = H - padT - padB;
+  const bw = (W - padL - padR) / n, max = P.total0 || 1, yOf = v => H - padB - (v / max) * ch, cx = i => padL + i * bw + bw / 2;
+  const real = data.filter(d => d.n <= CUR).map((d, i) => ({ i, v: d.n === 0 ? P.total0 : realAt(d.n < CUR ? P.periods[d.n - 1].end : TODAY) }));
+  const bars = data.map((d, i) => {
+    const h = Math.max(d.v > 0 ? 2 : 0, (d.v / max) * ch), x = padL + i * bw + bw * 0.16, y = H - padB - h, w = bw * 0.68;
+    const sel = d.n === S.sel, fill = d.v === 0 ? "var(--bar-done)" : sel ? "var(--accent)" : "var(--bar)";
+    const zeroLbl = i > 0 && data[i - 1].v > 0 && d.v === 0;
+    const name = d.n === 0 ? "Inicio del plan, 7 de octubre" : P.periods[d.n - 1].name;
+    return `<g class="bar" data-n="${d.n}" tabindex="0" role="button" aria-pressed="${sel}" aria-label="${esc(name)}: deuda plan ${money(d.v)}">
+      <rect class="hit" x="${(padL + i * bw).toFixed(1)}" y="${padT - 18}" width="${bw.toFixed(1)}" height="${ch + 18}" rx="6"></rect>
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${fill}" opacity="${sel || d.v === 0 ? 1 : 0.6}"></rect>
+      ${zeroLbl ? `<text class="val" x="${cx(i).toFixed(1)}" y="${(H - padB - 6).toFixed(1)}" text-anchor="middle">$0</text>` : ""}
+      <text class="lbl ${d.n === CUR ? "cur" : ""}" x="${cx(i).toFixed(1)}" y="${H - 6}" text-anchor="middle">${d.lbl}${d.n === CUR ? " •" : ""}</text></g>`;
+  }).join("");
+  const pts = real.map(r => `${cx(r.i).toFixed(1)},${yOf(r.v).toFixed(1)}`).join(" ");
+  const lastR = real[real.length - 1];
+  const realSvg = real.length ? `<polyline points="${pts}" fill="none" stroke="var(--ok)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"></polyline>
+    ${real.map(r => `<circle cx="${cx(r.i).toFixed(1)}" cy="${yOf(r.v).toFixed(1)}" r="4" fill="var(--ok)" stroke="var(--surface)" stroke-width="2" pointer-events="none"></circle>`).join("")}
+    <text class="val real" x="${Math.min(W - 40, cx(lastR.i) + 8).toFixed(1)}" y="${Math.max(12, yOf(lastR.v) - 8).toFixed(1)}" pointer-events="none">${money0(lastR.v)}</text>` : "";
+  $("chart").innerHTML = `<div class="sec-head"><span class="eyebrow">Deuda restante al cierre de cada periodo</span><span class="muted" style="font-size:.8rem">Toca una barra para ver el detalle</span></div>
+    <div class="legend"><span><i class="sw"></i>Plan</span><span><i class="sw line"></i>Real (lo que palomeas)</span><span>• = periodo actual</span></div>
+    <svg viewBox="0 0 ${W} ${H}" aria-label="Deuda restante por periodo: plan y real"><line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--line)"></line>${bars}${realSvg}</svg>
+    <div class="detail" id="chartDetail" aria-live="polite"></div>`;
+  $("chart").querySelectorAll(".bar").forEach(g => {
+    const pick = () => { const k = Number(g.dataset.n); S.sel = k === 0 ? 1 : k; S.detail0 = k === 0; render(); };
+    g.addEventListener("click", pick);
+    g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); pick(); } });
+  });
+  renderDetail(real);
+}
+function renderDetail(real) {
+  const P = S.plan, el = $("chartDetail");
+  if (S.detail0) {
+    el.innerHTML = `<h3>Inicio del plan · 7 oct 2026</h3><div class="kv"><div><span>Debías en total</span><b>${money(P.total0)}</b></div><div><span>Ya pagaste desde entonces</span><b>${money(P.total0 - realAt(TODAY))}</b></div></div>`;
+    return;
+  }
+  const p = P.periods[S.sel - 1], names = Object.fromEntries(P.debts.map(d => [d.key, d.name]));
+  const zero = P.debts.filter(d => d.zeroDate && periodOf(d.zeroDate) === p.n).map(d => d.name);
+  let realBox = "";
+  if (p.n < CUR) {
+    const r = realAt(p.end), diff = p.remaining - r;
+    realBox = `<div><span>Deuda real al cierre</span><b>${money(r)}</b></div><div><span>${diff >= 0 ? "Vas adelantado" : "Vas atrasado"}</span><b class="${diff >= 0 ? "chip-ok" : "chip-bad"}">${money(Math.abs(diff))}</b></div>`;
+  } else if (p.n === CUR) {
+    const pend = p.events.filter(e => !S.paid[e.id]).reduce((s, e) => s + e.amount, 0);
+    realBox = `<div><span>Deuda real hoy</span><b>${money(realAt(TODAY))}</b></div><div><span>Te falta pagar este periodo</span><b class="${pend ? "" : "chip-ok"}">${money(pend)}</b></div>`;
+  }
+  el.innerHTML = `<h3>${esc(p.n === 1 ? "Arranque" : p.name)} · ${esc(p.range)}${p.n === CUR ? " · ahora" : p.n > CUR ? " · próximo" : ""}</h3>
+    <div class="kv"><div><span>Deuda al cierre (plan)</span><b>${money(p.remaining)}</b></div>${realBox}
+      <div><span>Pagos a deudas</span><b>${money(p.debt)}</b></div><div><span>Te queda libre</span><b>${money(p.free)}</b></div>
+      <div><span>Ahorro acumulado</span><b>${money(p.cum)}</b></div></div>
+    <p style="font-size:.9rem">${zero.length ? `<b>Quedan en $0:</b> ${esc(zero.join(", "))}.` : "En este periodo no termina ninguna deuda."}</p>
+    <button type="button" class="btn ghost" id="toTicket" style="align-self:flex-start">Ver los pagos de este periodo</button>`;
+  $("toTicket").addEventListener("click", () => { const h = $("h-periodo"); if (h) h.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); });
+}
+function phaseItems(p) {
+  const names = Object.fromEntries(S.plan.debts.map(d => [d.key, d.name]));
+  const liq = p.events.filter(e => e.kind === "liquidar"), last = p.events.filter(e => e.kind === "ultimo"), reg = p.events.filter(e => e.kind !== "liquidar");
+  const items = [];
+  if (p.n === 1) items.push(`Paga ${reg.length} mínimos y cuotas: ${money(p.debt)} entre el 10 y el 15.`);
+  if (liq.length) items.push(`Liquida ${liq.map(e => names[e.key]).join(", ")}: ${money(liq.reduce((s, e) => s + e.amount, 0))}${liq.some(e => e.date === AGUINALDO) ? " (préstamos con el aguinaldo)" : ""}.`);
+  if (p.n > 1 && reg.length) items.push(`Cuotas y mínimos del periodo: ${money(reg.reduce((s, e) => s + e.amount, 0))}.`);
+  if (last.length) items.push(`Último pago de ${last.map(e => names[e.key]).join(", ")}.`);
+  items.push(`Aparta ${money(p.transporte + p.citas + p.extra + p.otros + p.subs + p.crunchy + p.debito)} (transporte${p.citas ? ", citas" : ""}${p.subs || p.debito ? ", suscripciones" : ""}${p.extra ? ", Acapulco" : ""}).`);
+  items.push(`Te queda libre ${money(p.free)} · ahorro acumulado ${money(p.cum)}.`);
+  return items;
+}
+function renderPhases() {
+  const P = S.plan, ps = P.periods;
+  const titles = ["Contención hasta la nómina", "Adiós a 3 tarjetas", "Aguinaldo: adiós préstamos", "Acapulco de contado"];
+  let html = ps.slice(0, 4).map((p, i) => `<li class="phase ${p.n < CUR ? "past" : p.n === CUR ? "now" : ""}"><span class="pin">${i + 1}</span><div>
+     <h3>${titles[i]}</h3><p class="when">${esc(p.n === 1 ? "7 – 27 oct 2026" : p.name + " · " + p.range)}</p><ul>${phaseItems(p).map(t => `<li>${esc(t)}</li>`).join("")}</ul></div></li>`).join("");
+  const rest = ps.slice(4).filter(p => p.debt > 0);
+  const names = Object.fromEntries(P.debts.map(d => [d.key, d.name]));
+  const keys = [...new Set(rest.flatMap(p => p.events.map(e => e.key)))];
+  const zc = P.zCore === Infinity ? null : P.zCore;
+  html += `<li class="phase ${CUR > 4 ? "now" : ""}"><span class="pin">5</span><div><h3>Solo quedan cuotas chicas</h3>
+    <p class="when">Enero en adelante</p><ul>
+    <li>${esc(keys.length ? "Siguen: " + keys.map(k => names[k]).join(", ") + "." : "Ya no quedan pagos.")}</li>
+    <li>${esc(zc ? `Último pago de préstamos y tarjetas: ${fmtDY(zc)}.` : "Algunas deudas siguen después del plan.")}</li>
+    ${S.aj.banamexLiquidar ? "" : `<li>${esc(`Banamex a plazo: ${money(P.debts.find(d => d.key === "banamex").cuota)} al mes hasta ${monthYear(P.debts.find(d => d.key === "banamex").zeroDate)}.`)}</li>`}
+    <li>${esc(`Libre por periodo después: ~${money0(ps[7].free)}. Úsalo primero para un fondo de emergencia.`)}</li></ul></div></li>`;
+  $("phases").innerHTML = html;
+}
+
+function renderTrips() {
+  const P = S.plan, p1 = P.periods[0], p2 = P.periods[1], p4 = P.periods[3];
+  const kayakOk = p2.cum >= 0, acaOk = p4.cum >= 0 && p4.free >= 0;
+  $("trips").innerHTML = `
+    <div class="verdict"><span class="pill ${kayakOk ? "wait" : "no"}">${kayakOk ? "Sí, después del 28 oct" : "No por ahora"}</span><h3>Kayak en Xochimilco</h3>
+      <p>Antes del 28 no: después de mínimos y transporte te quedan <b class="mono">${money(p1.free)}</b> para tres semanas.</p>
+      <p>Desde la nómina del 28 sí: entra en los <b class="mono">${money(p2.citas)}</b> de citas y aun así te sobran <b class="mono">${money(p2.free)}</b> en ese periodo. Yendo a mitades con tu novia, sobra más.</p></div>
+    <div class="verdict"><span class="pill ${acaOk ? "yes" : "no"}">${acaOk ? "Sí, en enero" : "Ajusta el monto"}</span><h3>Acapulco</h3>
+      <p>Tu parte (<b class="mono">${money(p4.extra)}</b>) sale de la nómina del 28 de diciembre, ya sin préstamos.</p>
+      <p>Ese periodo todavía te quedan <b class="mono">${money(p4.free)}</b> libres y llevas <b class="mono">${money(p4.cum)}</b> ahorrados. Págalo en efectivo o débito, nunca con tarjeta de crédito.</p></div>`;
+}
+
+/* ---------- Ajustes ---------- */
+const FIELDS = ["storiMin", "subs", "debito", "otros", "acapulco"];
+function syncForm() {
+  FIELDS.forEach(f => { const el = $(f); if (document.activeElement !== el) el.value = S.aj[f]; });
+  $("banamexLiquidar").checked = !!S.aj.banamexLiquidar;
+  const dis = !S.canWrite; [...FIELDS, "banamexLiquidar", "saveBtn", "resetBtn"].forEach(f => $(f).disabled = dis);
+}
+function readForm() { const a = {}; FIELDS.forEach(f => a[f] = $(f).value); a.banamexLiquidar = $("banamexLiquidar").checked; return sanitizeAj(a); }
+$("adjForm").addEventListener("input", () => { S.aj = readForm(); recompute(); $("saveMsg").textContent = "Cambios sin guardar"; });
+$("adjForm").addEventListener("submit", async ev => {
+  ev.preventDefault(); if (!S.canWrite) return;
+  S.aj = readForm(); recompute();
+  if (S.store === "db") { try { await S.db.doc("ajustes/plan").set({ ...S.aj }); $("saveMsg").textContent = "Ajustes guardados"; } catch (e) { $("saveMsg").textContent = "No se guardó. Revisa tu conexión e intenta de nuevo."; } }
+  else { lsSave(); $("saveMsg").textContent = "Guardado en este dispositivo"; }
+});
+$("resetBtn").addEventListener("click", () => { S.aj = { ...DEFAULT_AJ }; syncForm(); recompute(); $("saveMsg").textContent = "Valores del plan restaurados. Toca Guardar para conservarlos."; });
+
+recompute(); syncForm();
+initStore();
+</script>
+</body>
+</html>
