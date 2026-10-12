@@ -227,6 +227,11 @@ footer{font-size:.8rem; color:var(--muted); display:flex; flex-direction:column;
     <div id="debts" class="group" style="gap:18px"></div>
   </section>
 
+  <section aria-labelledby="h-plata">
+    <div class="sec-head"><h2 id="h-plata">Plan para cancelar Plata Card</h2><span class="muted" id="plataSum" style="font-size:.85rem"></span></div>
+    <div class="ticket" id="plataPlan" style="gap:10px"></div>
+  </section>
+
   <section aria-labelledby="h-subs">
     <div class="sec-head"><h2 id="h-subs">Suscripciones y celular</h2><span class="muted mono" id="subsTotal" style="font-size:.85rem"></span></div>
     <div class="ticket" style="gap:10px">
@@ -292,7 +297,7 @@ footer{font-size:.8rem; color:var(--muted); display:flex; flex-direction:column;
   </details>
 
   <footer>
-    <p>Cifras con los datos que diste el 7 de octubre de 2026 y tu estado de cuenta Banamex con corte al 8 de septiembre. Antes de cada liquidación, confirma el monto en la app.</p>
+    <p>Cifras con los datos que diste el 7 de octubre de 2026 y tu estado de cuenta Banamex con corte al 8 de septiembre. Los intereses de Plata son un estimado con 99.5% anual + IVA. Antes de cada liquidación, confirma el monto en la app.</p>
     <p>No soy asesor financiero: esto es un plan de flujo de efectivo para que decidas con números claros.</p>
   </footer>
 </main>
@@ -387,7 +392,8 @@ function buildDebts(aj) {
       info: "11 de 24 pagados · faltan 13" },
     { key: "plata", cat: "Tarjeta", name: "Plata Card", cuota: 31514, saldo: 524830, freq: "Mensual · día 10",
       sched: monthlyDates(2026, 10, 10, 40).map(d => [d, 31514]), kind: "minimo", liq: L(D(2026, 11, 28)),
-      info: "Mínimo $315.14" },
+      apr: 0.995, since: D(2026, 10, 7), cancel: true,
+      info: "99.5% anual + IVA: el mínimo no alcanza a cubrir los intereses" },
     { key: "storitc", cat: "Tarjeta", name: "Stori TC", cuota: 0, saldo: 214211, freq: "Corte día 12",
       sched: [], kind: "minimo", liq: L(D(2026, 10, 28)),
       info: "Al día: mínimo $0 en octubre. Se liquida completa el 28 oct" },
@@ -417,15 +423,19 @@ function buildDebts(aj) {
 
 /* Plan: cuotas antes de la fecha de liquidación, saldo completo en esa fecha */
 function planDebt(dbt) {
-  const ev = []; let rem = dbt.saldo;
+  const ev = []; let rem = dbt.saldo, acc = 0, last = dbt.since || 0;
+  const rd = dbt.apr ? dbt.apr / 360 * 1.16 : 0;            // interés diario estimado con IVA
+  const accrue = d => { if (rd && last && d > last) acc += Math.round(rem * rd * daysBetween(last, d)); last = d; };
   for (const [d, a] of dbt.sched) {
     if (rem <= 0) break;
     if (dbt.liq && d >= dbt.liq) break;
-    const amt = Math.min(a, rem); if (amt <= 0) continue;
-    rem -= amt;
-    ev.push({ date: d, amount: amt, kind: rem === 0 ? "ultimo" : dbt.kind });
+    accrue(d);
+    const amt = Math.min(a, rem + acc); if (amt <= 0) continue;
+    const toInt = Math.min(acc, amt), toPrin = amt - toInt; acc -= toInt; rem -= toPrin;
+    ev.push({ date: d, amount: amt, principal: toPrin, interest: toInt, kind: rem === 0 ? "ultimo" : dbt.kind });
   }
-  if (dbt.liq && rem > 0) { ev.push({ date: dbt.liq, amount: rem, kind: "liquidar" }); rem = 0; }
+  if (dbt.liq && rem > 0) { accrue(dbt.liq); ev.push({ date: dbt.liq, amount: rem + acc, principal: rem, interest: acc, kind: "liquidar" }); rem = 0; acc = 0; }
+  dbt.interestTotal = ev.reduce((s, x) => s + (x.interest || 0), 0);
   ev.forEach(e => { e.key = dbt.key; e.period = periodOf(e.date); e.id = `p${e.period}-${dbt.key}-${e.date}`; });
   dbt.events = ev.filter(e => e.period);
   const zeroEv = ev.length && rem === 0 ? ev[ev.length - 1] : null;
@@ -453,9 +463,10 @@ function buildPlan(aj) {
     p.debito = p.n === 1 ? 0 : Math.round(aj.debito * 100);
     p.crunchy = CRUNCHY_P.includes(p.n) ? CRUNCHY : 0;
     p.debt = p.events.reduce((s, e) => s + e.amount, 0);
+    p.interest = p.events.reduce((s, e) => s + (e.interest || 0), 0);
     p.free = p.income - p.transporte - p.citas - p.extra - p.otros - p.subs - p.crunchy - p.debito - p.debt;
     p.carryIn = carry; carry += p.free; p.cum = carry;
-    paidCum += p.debt; p.remaining = total0 - paidCum;
+    paidCum += p.debt - p.interest; p.remaining = total0 - paidCum;
   }
   const lastDate = list => list.reduce((m, d) => d.zeroDate === null ? Infinity : Math.max(m, d.zeroDate), 0);
   const zAll = lastDate(debts), zCore = lastDate(debts.filter(d => d.key !== "banamex"));
@@ -479,7 +490,7 @@ const PNOTE = {
   3: "<strong>Llega el aguinaldo (~15 dic).</strong> Paga primero las cuotas del 28 al 30 de noviembre con tu nómina; cuando caiga el aguinaldo pide en cada app el monto para liquidar y paga todo.",
   4: "<strong>Acapulco.</strong> Tu parte del viaje ya está apartada en este periodo, de contado.",
 };
-const S = { aj: { ...DEFAULT_AJ }, paid: {}, sel: null, store: "none", canWrite: true, db: null, plan: null };
+const S = { aj: { ...DEFAULT_AJ }, paid: {}, steps: {}, sel: null, store: "none", canWrite: true, db: null, plan: null };
 const TODAY = toInt(new Date());
 const CUR = periodOf(TODAY) || (TODAY < PERIODS[0].start ? 1 : NP);
 S.sel = CUR;
@@ -492,8 +503,8 @@ function sanitizeAj(a) {
 
 /* ---------- Guardado ---------- */
 const LS = "deudacero.v1";
-function lsLoad() { try { const x = JSON.parse(localStorage.getItem(LS) || "{}"); if (x.paid) S.paid = x.paid; if (x.aj) S.aj = sanitizeAj({ ...DEFAULT_AJ, ...x.aj }); } catch (e) {} }
-function lsSave() { try { localStorage.setItem(LS, JSON.stringify({ paid: S.paid, aj: S.aj })); } catch (e) {} }
+function lsLoad() { try { const x = JSON.parse(localStorage.getItem(LS) || "{}"); if (x.paid) S.paid = x.paid; if (x.steps) S.steps = x.steps; if (x.aj) S.aj = sanitizeAj({ ...DEFAULT_AJ, ...x.aj }); } catch (e) {} }
+function lsSave() { try { localStorage.setItem(LS, JSON.stringify({ paid: S.paid, steps: S.steps, aj: S.aj })); } catch (e) {} }
 function setStatus(kind, txt) { $("dot").className = "dot " + kind; $("storeStatus").textContent = txt; }
 
 async function initStore() {
@@ -508,9 +519,21 @@ async function initStore() {
     snap.docs.forEach(d => { const x = d.data(); if (x) m[d.id] = { monto: Math.round(num(x.monto, 0)), fecha: String(x.fecha || "") }; });
     S.paid = m; render();
   }, () => setStatus("warn", "No se pudieron leer tus pagos. Recarga la página."));
+  db.collection("pasos").onSnapshot(snap => {
+    const m = {}; snap.docs.forEach(d => { if (d.exists) m[d.id] = true; }); S.steps = m; render();
+  }, () => {});
   db.doc("ajustes/plan").onSnapshot(s => {
     if (s.exists) { S.aj = sanitizeAj({ ...DEFAULT_AJ, ...s.data() }); recompute(); syncForm(); }
   }, () => {});
+}
+async function markStep(id, on) {
+  if (!S.canWrite) return;
+  if (on) S.steps[id] = true; else delete S.steps[id];
+  render();
+  if (S.store === "db") {
+    try { const ref = S.db.collection("pasos").doc(id); if (on) await ref.set({ hecho: true, fecha: String(TODAY) }); else await ref.delete(); }
+    catch (e) { setStatus("warn", "No se guardó el último cambio. Revisa tu conexión."); }
+  } else lsSave();
 }
 async function markPaid(ev, on) {
   if (!S.canWrite) return;
@@ -572,7 +595,7 @@ function render() {
   $("zeroSub").textContent = S.aj.banamexLiquidar ? "Incluye Banamex: lo liquidas con el aguinaldo" : `Banamex a plazo termina ${ban.zeroDate ? monthYear(ban.zeroDate) : "después del plan"}`;
   const nxtPay = PERIODS.find(p => p.n > 1 && p.start >= TODAY) || null;
   if (nxtPay) { const dd = daysBetween(TODAY, nxtPay.start); $("payday").textContent = dd === 0 ? "Hoy" : `En ${dd} ${dd === 1 ? "día" : "días"}`; $("paydaySub").textContent = `${fmtDY(nxtPay.start)} · ${money(2477700)}`; }
-  renderChips(); renderTicket(R); renderDebts(R); renderSubs(); renderChart(); renderPhases(); renderTrips();
+  renderChips(); renderTicket(R); renderDebts(R); renderCancel(); renderSubs(); renderChart(); renderPhases(); renderTrips();
 }
 
 function renderChips() {
@@ -595,6 +618,7 @@ function renderTicket(R) {
     const when = e.kind === "liquidar" && e.date === AGUINALDO ? "Aguin." : fmtD(e.date);
     const tags = [`<span class="tag ${e.kind === "liquidar" ? "liq" : e.kind === "ultimo" ? "last" : ""}">${KIND[e.kind]}</span>`];
     if (d.est) tags.push('<span class="tag est">Estimado</span>');
+    if (e.kind === "liquidar" && e.interest) tags.push(`<span class="tag est">Incluye ~${money0(e.interest)} de intereses</span>`);
     if (late) tags.push('<span class="tag late">Vencido</span>');
     if (isPaid) tags.push('<span class="tag paid">Pagado</span>');
     const edit = isPaid ? `<div class="paidedit"><label for="m-${e.id}">Pagaste</label><input class="mono" type="number" step="0.01" min="0" id="m-${e.id}" data-ev="${e.id}" value="${(S.paid[e.id].monto / 100).toFixed(2)}" ${S.canWrite ? "" : "disabled"}></div>` : "";
@@ -645,11 +669,37 @@ function renderDebts(R) {
         <div class="debt-top"><span class="n">${esc(d.name)}${d.est ? ' <span class="tag est">Estimado</span>' : ""}</span><span class="s">${k.rem === 0 ? "Liquidada" : money(k.rem)}</span></div>
         <div class="meter" aria-hidden="true"><i style="width:${pc}%"></i></div>
         <div class="debt-meta"><span>${esc(d.info)}</span><span>${esc(d.freq)}</span></div>
-        <div class="debt-meta"><span>Pago: ${money(d.cuota)}</span><span>${esc(end)}</span></div></div>`;
+        <div class="debt-meta"><span>Pago: ${money(d.cuota)}</span><span>${esc(end)}</span></div>${d.interestTotal ? `<div class="debt-meta"><span class="chip-bad">Intereses estimados hasta liquidarla: ${money0(d.interestTotal)}</span>${d.cancel ? '<span class="tag late">Cancelar al liquidar</span>' : ""}</div>` : ""}</div>`;
     }).join("")}</div>`;
   }).join("");
 }
 
+function renderCancel() {
+  const d = S.plan.debts.find(x => x.key === "plata"); if (!d) return;
+  const ev = d.events, liq = ev.find(e => e.kind === "liquidar"), mins = ev.filter(e => e.kind !== "liquidar");
+  const rd = d.apr / 360 * 1.16, perMonth = Math.round((d.saldo - (mins[0] ? mins[0].principal : 0)) * rd * 30), per1000 = Math.round(100000 * rd * 30);
+  const steps = [
+    { id: "plata-min-oct", when: "10 oct", txt: `Paga el mínimo (${money(mins[0] ? mins[0].amount : 31514)}).` },
+    { id: "plata-cargos", when: "Antes 28 nov", txt: "En la app revisa si tienes cargos automáticos o suscripciones en Plata y pásalos a tu tarjeta de débito." },
+    { id: "plata-min-nov", when: "10 nov", txt: `Paga el mínimo (${money(mins[1] ? mins[1].amount : 31514)}). Casi todo se va a intereses.` },
+    { id: "plata-liquidar", when: "28 nov", txt: `Con tu nómina, en la app elige Pagar → Deuda total. Estimado: ${money(liq ? liq.amount : 0)} (incluye ~${money0(d.interestTotal)} de intereses).` },
+    { id: "plata-cero", when: "1–2 días", txt: "Espera a que la app marque $0 de deuda." },
+    { id: "plata-cancelar", when: "Al ver $0", txt: "Pide la cancelación por el chat de la app (o al 55 5232 8040). No te pueden cobrar comisión y se cancela al día hábil siguiente si no debes nada." },
+    { id: "plata-constancia", when: "Mismo día", txt: "Pide tu constancia de terminación y finiquito: el contrato te da derecho a ella." },
+    { id: "plata-buro", when: "En 1–2 meses", txt: "Revisa tu Buró de Crédito: Plata debe aparecer como cuenta cerrada sin adeudo." },
+  ];
+  const done = steps.filter(s => S.steps[s.id]).length;
+  $("plataSum").textContent = `${done} de ${steps.length} pasos`;
+  $("plataPlan").innerHTML = `
+    <div class="kv"><div><span>Tu tasa (sin IVA)</span><b>99.5% anual</b></div><div><span>Promedio oficial Plata</span><b>105.91%</b></div>
+      <div><span>Intereses al mes hoy</span><b class="chip-bad">~${money0(perMonth)}</b></div><div><span>Su mínimo</span><b>${money(31514)}</b></div></div>
+    <div class="note"><strong>Tienes razón: con el mínimo la deuda crece.</strong> Con tu saldo, los intereses del mes (~${money0(perMonth)} con IVA) son más que el mínimo de $315.14. El 28 de noviembre es la primera fecha en que tu efectivo alcanza para liquidarla completa sin quedarte sin colchón.</div>
+    <div class="rows">${steps.map(s => `<div class="item"><label class="row ${S.steps[s.id] ? "done" : ""}" for="st-${s.id}" style="grid-template-columns:28px 78px minmax(0,1fr)">
+      <input type="checkbox" id="st-${s.id}" data-step="${s.id}" ${S.steps[s.id] ? "checked" : ""} ${S.canWrite ? "" : "disabled"} aria-label="Paso hecho: ${esc(s.txt)}">
+      <span class="date mono">${esc(s.when)}</span><span class="what"><span class="name" style="font-weight:500">${esc(s.txt)}</span></span></label></div>`).join("")}</div>
+    <p class="muted" style="font-size:.85rem">¿Te sobra algo el 28 de octubre? Abónalo a Plata: cada $1,000 que abones antes te ahorra unos ${money0(per1000)} de intereses al mes. Fuente de la tasa promedio: folleto de Plata Card (CAT promedio 169.3% sin IVA, calculado el 18 sep 2026).</p>`;
+  $("plataPlan").querySelectorAll("input[data-step]").forEach(cb => cb.addEventListener("change", () => markStep(cb.dataset.step, cb.checked)));
+}
 function renderSubs() {
   const row = (name, tags, amt) => `<div class="item"><div class="row" style="grid-template-columns:minmax(0,1fr) auto;cursor:default;min-height:44px"><span class="what"><span class="name">${esc(name)}</span><span class="tags">${tags}</span></span><span class="amt mono">${money(amt)}</span></div></div>`;
   $("subsList").innerHTML = SUBS.map(x => row(x.name,
