@@ -283,7 +283,6 @@ footer{font-size:.8rem; color:var(--muted); display:flex; flex-direction:column;
     <summary>Ajustes del plan</summary>
     <form class="form" id="adjForm" novalidate>
       <label class="check field" for="banamexLiquidar" style="flex-direction:row"><input type="checkbox" id="banamexLiquidar"><span><b>Liquidar Banamex con el aguinaldo</b><br><span class="hint">Tus diferidos cobran 15% anual: es tu deuda más barata. Liquidarla con el aguinaldo te ahorra unos $400 de intereses. Es opcional: primero arma tu colchón.</span></span></label>
-      <div class="field"><label for="storiMin">Stori TC: pago mínimo de octubre</label><input type="number" id="storiMin" min="0" step="0.01" inputmode="decimal"><span class="hint">La app no lo muestra; el plan usa $220 como estimado.</span></div>
       <div class="field"><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $1,313.49 (incluye celular y seguro de Banamex). Si bajas el celular o quitas algo, cámbialo aquí.</span></div>
       <div class="field"><label for="debito">Suscripciones a débito al mes</label><input type="number" id="debito" min="0" step="1" inputmode="decimal"><span class="hint">Spotify $80 (día 5) + Claude Pro $400 (día 29). Claude cuesta 20 dólares, así que en pesos varía entre $350 y $400; el plan usa $400 para ir seguro.</span></div>
       <div class="field"><label for="otros">Otros gastos tuyos al mes</label><input type="number" id="otros" min="0" step="1" inputmode="decimal"><span class="hint">Comida fuera, cosas personales. Si lo dejas en 0, todo lo que sobra se ve como ahorro.</span></div>
@@ -293,7 +292,7 @@ footer{font-size:.8rem; color:var(--muted); display:flex; flex-direction:column;
   </details>
 
   <footer>
-    <p>Cifras con los datos que diste el 7 de octubre de 2026 y tu estado de cuenta Banamex con corte al 8 de septiembre. El mínimo de Stori TC es estimado. Antes de cada liquidación, confirma el monto en la app.</p>
+    <p>Cifras con los datos que diste el 7 de octubre de 2026 y tu estado de cuenta Banamex con corte al 8 de septiembre. Antes de cada liquidación, confirma el monto en la app.</p>
     <p>No soy asesor financiero: esto es un plan de flujo de efectivo para que decidas con números claros.</p>
   </footer>
 </main>
@@ -372,7 +371,6 @@ function quincenalDates(first, days, count) {        // days: [14,28] o [15,30]
 
 /* Deudas: datos tuyos. c = centavos */
 function buildDebts(aj) {
-  const storiMin = Math.round(aj.storiMin * 100);
   const L = (d) => d;   // fecha de liquidación
   return [
     { key: "digitt", cat: "Préstamo", name: "Digitt", cuota: 169000, saldo: 845000, freq: "Mensual · fin de mes",
@@ -390,9 +388,9 @@ function buildDebts(aj) {
     { key: "plata", cat: "Tarjeta", name: "Plata Card", cuota: 31514, saldo: 524830, freq: "Mensual · día 10",
       sched: monthlyDates(2026, 10, 10, 40).map(d => [d, 31514]), kind: "minimo", liq: L(D(2026, 11, 28)),
       info: "Mínimo $315.14" },
-    { key: "storitc", cat: "Tarjeta", name: "Stori TC", cuota: storiMin, saldo: 214211, freq: "Mensual · día 12",
-      sched: monthlyDates(2026, 10, 12, 40).map(d => [d, storiMin]), kind: "minimo", liq: L(D(2026, 10, 28)),
-      info: "Mínimo estimado (la app no lo muestra)", est: true },
+    { key: "storitc", cat: "Tarjeta", name: "Stori TC", cuota: 0, saldo: 214211, freq: "Corte día 12",
+      sched: [], kind: "minimo", liq: L(D(2026, 10, 28)),
+      info: "Al día: mínimo $0 en octubre. Se liquida completa el 28 oct" },
     { key: "bradescard", cat: "Tarjeta", name: "Bradescard", cuota: 112677, saldo: 275812, freq: "Mensual · día 13",
       sched: monthlyDates(2026, 10, 13, 40).map(d => [d, 112677]), kind: "minimo", liq: L(D(2026, 10, 28)),
       info: "Mínimo $1,126.77" },
@@ -472,7 +470,7 @@ if (typeof module !== "undefined") module.exports = { buildPlan, PERIODS, money,
 
 
 /* ===== App ===== */
-const DEFAULT_AJ = { banamexLiquidar: false, storiMin: 220, otros: 0, acapulco: 4000, subs: 1313.49, debito: 480 };
+const DEFAULT_AJ = { banamexLiquidar: false, otros: 0, acapulco: 4000, subs: 1313.49, debito: 480 };
 const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago" };
 const CAT_LABEL = { "Préstamo": "Préstamos", "Tarjeta": "Tarjetas", "Concierto": "Conciertos" };
 const PNOTE = {
@@ -489,7 +487,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const num = (v, d, lo = 0, hi = 1e7) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
 function sanitizeAj(a) {
-  return { banamexLiquidar: !!a.banamexLiquidar, storiMin: num(a.storiMin, 220), otros: num(a.otros, 0), acapulco: num(a.acapulco, 4000), subs: num(a.subs, 1313.49), debito: num(a.debito, 480) };
+  return { banamexLiquidar: !!a.banamexLiquidar, otros: num(a.otros, 0), acapulco: num(a.acapulco, 4000), subs: num(a.subs, 1313.49), debito: num(a.debito, 480) };
 }
 
 /* ---------- Guardado ---------- */
@@ -771,7 +769,7 @@ function renderTrips() {
 }
 
 /* ---------- Ajustes ---------- */
-const FIELDS = ["storiMin", "subs", "debito", "otros", "acapulco"];
+const FIELDS = ["subs", "debito", "otros", "acapulco"];
 function syncForm() {
   FIELDS.forEach(f => { const el = $(f); if (document.activeElement !== el) el.value = S.aj[f]; });
   $("banamexLiquidar").checked = !!S.aj.banamexLiquidar;
