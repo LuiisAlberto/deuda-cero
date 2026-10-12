@@ -11,16 +11,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: app de una mano. Barra arriba, 5 pestañas abajo; la ruta a deuda cero se dibuja como una línea del metro (naranja), cada nómina es una estación. */
+/* Layout: app de una mano. Barra arriba, 5 pestañas abajo; el avance se lee en etapas (una por nómina) con su fecha en bloque y la deuda que queda. Colores: amarillo (acento), azul (datos e información), verde (pagado). */
 :root{
   color-scheme:dark;
   --bg:#0C0F14; --surface:#141920; --raise:#1B212A; --line:#262E39; --line-2:#36404D;
   --ink:#ECEFF4; --muted:#9AA4B2; --faint:#6E7887;
-  --accent:#FF8A2A; --accent-ink:#1C0E00; --accent-soft:rgba(255,138,42,.13); --accent-tint:rgba(255,138,42,.06);
+  --accent:#FFD23F; --accent-ink:#1A1400; --accent-soft:rgba(255,210,63,.14); --accent-tint:rgba(255,210,63,.06); --accent-text:#FFD23F;
+  --blue:#6BA6FF; --blue-soft:rgba(107,166,255,.15);
   --ok:#3BCB85; --on-ok:#05150D; --ok-soft:rgba(59,203,133,.13);
   --bad:#FF6A5F; --bad-soft:rgba(255,106,95,.13);
-  --warn:#F0C04C; --warn-soft:rgba(240,192,76,.12);
-  --bar:#3A4554;
+  --warn:#6BA6FF; --warn-soft:rgba(107,166,255,.15);
+  --bar:#4F86E0;
   --shadow:0 1px 0 rgba(255,255,255,.035) inset, 0 10px 28px rgba(0,0,0,.32);
   --f-display:"Archivo", "Arial Narrow", system-ui, sans-serif;
   --f-body:"IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -31,18 +32,19 @@
   color-scheme:light;
   --bg:#F2F4F7; --surface:#FFFFFF; --raise:#F6F7F9; --line:#DEE3EA; --line-2:#C8D0DA;
   --ink:#10151C; --muted:#545F6E; --faint:#77818F;
-  --accent:#B85200; --accent-ink:#FFFFFF; --accent-soft:rgba(184,82,0,.10); --accent-tint:rgba(184,82,0,.04);
+  --accent:#F5C518; --accent-ink:#1A1400; --accent-soft:rgba(245,197,24,.20); --accent-tint:rgba(245,197,24,.09); --accent-text:#7A5A00;
+  --blue:#1E5FD8; --blue-soft:rgba(30,95,216,.10);
   --ok:#0B7F4C; --on-ok:#FFFFFF; --ok-soft:rgba(11,127,76,.10);
   --bad:#C2322A; --bad-soft:rgba(194,50,42,.09);
-  --warn:#8A5D00; --warn-soft:rgba(138,93,0,.10);
-  --bar:#C3CBD5;
+  --warn:#1E5FD8; --warn-soft:rgba(30,95,216,.10);
+  --bar:#3D74D6;
   --shadow:0 1px 2px rgba(16,21,28,.05), 0 8px 22px rgba(16,21,28,.06);
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
 button,input{font:inherit; color:inherit}
-:focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:8px}
+:focus-visible{outline:3px solid var(--blue); outline-offset:2px; border-radius:8px}
 h1,h2,h3{font-family:var(--f-display); font-stretch:112%; margin:0; letter-spacing:-.01em; text-wrap:balance}
 p{margin:0}
 .mono{font-family:var(--f-mono); font-variant-numeric:tabular-nums}
@@ -53,7 +55,7 @@ p{margin:0}
 .appbar{position:sticky; top:env(safe-area-inset-top,0px); z-index:15; background:var(--bg); border-bottom:1px solid var(--line)}
 .appbar-in{max-width:760px; margin:0 auto; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px}
 .brand{display:flex; align-items:center; gap:10px; min-width:0}
-.logo{width:34px; height:34px; border-radius:50%; background:var(--accent); color:var(--accent-ink); display:grid; place-items:center; font-family:var(--f-display); font-stretch:125%; font-weight:900; font-size:1.05rem; flex:none; box-shadow:0 0 0 3px var(--bg), 0 0 0 5px var(--accent)}
+.logo{width:34px; height:34px; border-radius:11px; background:var(--accent); color:var(--accent-ink); display:grid; place-items:center; font-family:var(--f-display); font-stretch:125%; font-weight:900; font-size:1.05rem; flex:none}
 .brand b{font-family:var(--f-display); font-stretch:118%; font-weight:800; font-size:1.02rem; display:block; line-height:1.15}
 .sub{font-size:.76rem; color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .dot{width:7px; height:7px; border-radius:50%; background:var(--faint); flex:none}
@@ -71,7 +73,7 @@ p{margin:0}
 .tab{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-height:54px; border-radius:14px; border:0; background:none; color:var(--muted); cursor:pointer; font-size:.7rem; font-weight:600; letter-spacing:.02em; transition:color .15s, background .15s}
 .tab svg{width:22px; height:22px}
 .tab:hover{color:var(--ink)}
-.tab[aria-current="page"]{color:var(--accent); background:var(--accent-soft)}
+.tab[aria-current="page"]{color:var(--accent-text); background:var(--accent-soft)}
 .seg{display:flex; gap:6px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:4px; overflow-x:auto}
 .seg button{flex:1 0 auto; border:0; background:none; color:var(--muted); font-weight:600; font-size:.85rem; padding:9px 12px; border-radius:10px; min-height:40px; cursor:pointer; white-space:nowrap}
 .seg button[aria-pressed="true"]{background:var(--raise); color:var(--ink); box-shadow:inset 0 0 0 1px var(--line-2)}
@@ -93,13 +95,9 @@ p{margin:0}
 /* Hero */
 .hero{position:relative; overflow:hidden}
 .big{font-family:var(--f-display); font-stretch:115%; font-weight:900; font-size:clamp(2.4rem, 12vw, 3.4rem); line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
-.track{position:relative; height:10px; border-radius:99px; background:var(--line-2); margin:10px 8px 2px}
-.track i{position:absolute; left:0; top:0; bottom:0; border-radius:99px; background:var(--accent)}
-.track .end,.track .start{position:absolute; top:50%; width:16px; height:16px; margin-top:-8px; border-radius:50%; border:3px solid var(--accent); background:var(--surface)}
-.track .start{left:-8px; background:var(--accent)}
-.track .end{right:-8px; border-color:var(--ok)}
-.track .train{position:absolute; top:50%; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px var(--surface), 0 0 0 6px var(--accent-soft)}
-.track-l{display:flex; justify-content:space-between; font-size:.75rem; color:var(--muted)}
+.track{height:12px; border-radius:99px; background:var(--line-2); overflow:hidden; margin-top:6px}
+.track i{display:block; height:100%; border-radius:99px; background:var(--accent); min-width:4px; transition:width .4s ease}
+.track-l{display:flex; justify-content:space-between; gap:8px; font-size:.8rem; color:var(--muted)}
 
 /* Próximo pago */
 .next{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center}
@@ -148,9 +146,7 @@ input[type=checkbox]:disabled{opacity:.5; cursor:default}
 .line.minus .mono::before{content:"− "; color:var(--faint)}
 .line.free{font-family:var(--f-display); font-stretch:110%; font-size:1.15rem; font-weight:800}
 .line.free.neg{color:var(--bad)}
-.perf{position:relative; border-top:2px dashed var(--line-2); margin-inline:-16px}
-.perf::before,.perf::after{content:""; position:absolute; top:-11px; width:20px; height:20px; border-radius:50%; background:var(--bg); border:1px solid var(--line)}
-.perf::before{left:-11px} .perf::after{right:-11px}
+.perf{border-top:1px solid var(--line); margin:2px 0}
 
 /* Deudas */
 .debt{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:12px 14px; display:flex; flex-direction:column; gap:7px}
@@ -167,34 +163,38 @@ input[type=checkbox]:disabled{opacity:.5; cursor:default}
 .progress-dots{display:flex; gap:4px}
 .progress-dots i{width:18px; height:6px; border-radius:3px; background:var(--line-2)}
 .progress-dots i.on{background:var(--accent)}
-details.more summary{cursor:pointer; list-style:none; font-weight:700; color:var(--accent); min-height:40px; display:flex; align-items:center}
+details.more summary{cursor:pointer; list-style:none; font-weight:700; color:var(--blue); min-height:40px; display:flex; align-items:center}
 details.more summary::-webkit-details-marker{display:none}
 details.more summary::after{content:"＋"; margin-left:6px; font-weight:400}
 details.more[open] summary::after{content:"－"}
 
-/* Ruta: línea del metro */
-.metro{list-style:none; margin:0; padding:0}
-.st{display:grid; grid-template-columns:28px minmax(0,1fr); gap:12px; position:relative; padding-bottom:18px}
-.st::before{content:""; position:absolute; left:11px; top:16px; bottom:-4px; width:6px; border-radius:3px; background:var(--accent)}
-.st.next::before,.st.now::before{background:repeating-linear-gradient(to bottom, var(--line-2) 0 8px, transparent 8px 13px)}
-.st:last-child::before{display:none}
-.node{position:relative; z-index:1; width:20px; height:20px; margin:3px 0 0 4px; border-radius:50%; border:4px solid var(--accent); background:var(--surface)}
-.st.done .node{background:var(--accent)}
-.st.next .node{border-color:var(--line-2)}
-.st.now .node{background:var(--accent); box-shadow:0 0 0 5px var(--accent-soft); animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{50%{box-shadow:0 0 0 9px var(--accent-soft)}}
-.st.terminal .node{width:26px; height:26px; margin:0 0 0 1px; border-color:var(--ok); background:var(--ok)}
-.st-body{display:flex; flex-direction:column; gap:5px; min-width:0}
-.st-top{display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:baseline}
-.st-top b{font-family:var(--f-display); font-stretch:112%; font-weight:800}
-.st-top span{font-size:.78rem; color:var(--muted)}
-.st-meta{display:flex; gap:14px; flex-wrap:wrap; font-size:.85rem; color:var(--muted)}
-.st-meta b{color:var(--ink); font-weight:600}
+/* Avance: etapas */
+.stages{display:flex; flex-direction:column; gap:8px}
+.stage{display:grid; grid-template-columns:50px minmax(0,1fr); gap:12px; align-items:start; padding:12px; border-radius:14px; background:var(--raise); border:1px solid var(--line)}
+.stage.now{border-color:var(--accent); background:var(--accent-tint)}
+.stage.done .sbody,.stage.done .sright{opacity:.72}
+.sdate{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; border-radius:11px; background:var(--surface); border:1px solid var(--line); padding:6px 0; min-height:50px}
+.stage.now .sdate{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.stage.now .sdate .m{color:var(--accent-ink)}
+.sdate .m{font-size:.6rem; letter-spacing:.12em; font-weight:700; text-transform:uppercase; color:var(--muted)}
+.sdate .d{font-family:var(--f-display); font-stretch:110%; font-weight:900; font-size:1.25rem; line-height:1}
+.sbody{display:flex; flex-direction:column; gap:6px; min-width:0}
+.stop{display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap}
+.stop b{font-family:var(--f-display); font-stretch:110%; font-weight:800}
+.smeta{display:flex; gap:12px; flex-wrap:wrap; font-size:.82rem; color:var(--muted)}
+.smeta b{color:var(--ink); font-weight:600}
+.sbar{height:4px; border-radius:99px; background:var(--line-2); overflow:hidden}
+.sbar i{display:block; height:100%; background:var(--accent); border-radius:99px}
+.sright{margin-left:auto; text-align:right; display:flex; flex-direction:column; gap:0}
+.sright b{font-family:var(--f-mono); font-weight:600; font-size:.9rem; white-space:nowrap}
+.sright span{font-size:.68rem; color:var(--muted)}
+.stage.final{background:var(--ok-soft); border-color:transparent}
+.stage.final .sdate{background:var(--ok); border-color:var(--ok); color:var(--on-ok)}
+.stage.final .sdate .m{color:var(--on-ok)}
 .xfer{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
-.pill{font-size:.75rem; font-weight:600; padding:3px 9px; border-radius:99px; border:1.5px solid var(--ok); color:var(--ok)}
-.pill.goal{border-color:var(--accent); color:var(--accent)}
-.here{align-self:flex-start; font-size:.68rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-ink); background:var(--accent); border-radius:6px; padding:2px 7px}
-.st.next .st-top b{color:var(--muted)}
+.xfer .xl{font-size:.72rem; color:var(--muted)}
+.pill{font-size:.74rem; font-weight:600; padding:2px 9px; border-radius:99px; border:1.5px solid var(--ok); color:var(--ok)}
+.pill.goal{border-color:var(--accent-text); color:var(--accent-text)}
 
 /* Gráfica */
 .chart svg{display:block; width:100%; height:auto; max-width:620px; margin-inline:auto}
@@ -223,7 +223,7 @@ details.more[open] summary::after{content:"－"}
 .vpill.yes{background:var(--ok-soft); color:var(--ok)} .vpill.wait{background:var(--warn-soft); color:var(--warn)} .vpill.no{background:var(--bad-soft); color:var(--bad)}
 .rules{counter-reset:r; list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px}
 .rules li{padding-left:40px; position:relative; font-size:.92rem}
-.rules li::before{counter-increment:r; content:counter(r); position:absolute; left:0; top:1px; width:26px; height:26px; border-radius:50%; border:3px solid var(--accent); display:grid; place-items:center; font-family:var(--f-display); font-weight:800; font-size:.75rem; color:var(--accent)}
+.rules li::before{counter-increment:r; content:counter(r); position:absolute; left:0; top:1px; width:26px; height:26px; border-radius:50%; border:3px solid var(--blue); display:grid; place-items:center; font-family:var(--f-display); font-weight:800; font-size:.75rem; color:var(--blue)}
 .rules strong{display:block}
 .tbl{overflow-x:auto}
 table{border-collapse:collapse; width:100%; font-size:.88rem}
@@ -260,9 +260,8 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
     <div class="card hero">
       <span class="eyebrow">Debes hoy</span>
       <div class="big" id="debes">—</div>
-      <div class="track" aria-hidden="true"><i id="trackFill"></i><span class="start"></span><span class="end"></span><span class="train" id="train"></span></div>
-      <div class="track-l"><span>7 oct</span><span id="pctTxt">0% liquidado</span><span>Deuda cero</span></div>
-      <p class="muted" style="font-size:.85rem" id="pagadoTxt"></p>
+      <div class="track" aria-hidden="true"><i id="trackFill"></i></div>
+      <div class="track-l"><span id="pagadoTxt"></span><span id="pctTxt">0% liquidado</span></div>
     </div>
     <div class="card next" id="nextCard"></div>
     <div class="grid3" id="hoyStats"></div>
@@ -286,12 +285,12 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
     <div id="debts" style="display:flex; flex-direction:column; gap:10px"></div>
   </section>
 
-  <!-- RUTA -->
-  <section class="panel" id="tab-ruta" aria-label="Ruta" hidden>
+  <!-- AVANCE -->
+  <section class="panel" id="tab-avance" aria-label="Avance" hidden>
     <div class="card chart" id="chart"></div>
     <div class="card">
-      <div class="card-h"><h2>Línea Deuda Cero</h2><span class="muted" style="font-size:.8rem">Cada estación es una nómina</span></div>
-      <ol class="metro" id="metro"></ol>
+      <div class="card-h"><h2>Etapas del plan</h2><span class="muted" style="font-size:.8rem">Una por nómina</span></div>
+      <div class="stages" id="stages"></div>
     </div>
     <div class="grid2" id="trips" style="grid-template-columns:repeat(auto-fit, minmax(240px, 1fr))"></div>
   </section>
@@ -366,7 +365,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
     <button type="button" class="tab" data-go="hoy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5h4v5"/></svg><span>Hoy</span></button>
     <button type="button" class="tab" data-go="pagos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.5 1.5L8 4.5M3.5 12l1.5 1.5L8 10.5M3.5 18l1.5 1.5L8 16.5"/></svg><span>Pagos</span></button>
     <button type="button" class="tab" data-go="deudas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg><span>Deudas</span></button>
-    <button type="button" class="tab" data-go="ruta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="19" r="2.2"/><circle cx="19" cy="5" r="2.2"/><path d="M7.2 19H12a3 3 0 0 0 3-3V8a3 3 0 0 1 1.8-2.8"/></svg><span>Ruta</span></button>
+    <button type="button" class="tab" data-go="avance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="m5 15 4.5-4.5 3 3L19 7"/><path d="M15 7h4v4"/></svg><span>Avance</span></button>
     <button type="button" class="tab" data-go="mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Más</span></button>
   </div>
 </nav>
@@ -558,7 +557,7 @@ const PNOTE = {
   3: "<strong>Llega el aguinaldo (~15 dic).</strong> Paga primero las cuotas del 28 al 30 de noviembre con tu nómina; cuando caiga el aguinaldo pide en cada app el monto para liquidar.",
   4: "<strong>Acapulco.</strong> Tu parte del viaje ya está apartada en este periodo, de contado.",
 };
-const TABS = ["hoy", "pagos", "deudas", "ruta", "mas"];
+const TABS = ["hoy", "pagos", "deudas", "avance", "mas"];
 const ICON_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>';
 const ICON_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const TODAY = toInt(new Date());
@@ -677,7 +676,7 @@ function payRow(e, pre, editable) {
   const d = S.dm[e.key], paid = S.paid[e.id], late = !paid && e.date < TODAY, id = pre + e.id;
   const when = e.kind === "liquidar" && e.date === AGUINALDO ? "Aguin." : fmtD(e.date);
   const tags = [`<span class="tag ${e.kind === "liquidar" ? "liq" : e.kind === "ultimo" ? "last" : ""}">${KIND[e.kind]}</span>`];
-  if (e.kind === "liquidar" && e.interest) tags.push(`<span class="tag warn">+~${money0(e.interest)} intereses</span>`);
+  if (e.kind === "liquidar" && e.interest) tags.push(`<span class="tag bad">+~${money0(e.interest)} intereses</span>`);
   if (late) tags.push('<span class="tag bad">Vencido</span>');
   if (paid) tags.push('<span class="tag ok">Pagado</span>');
   return `<div class="item ${paid ? "done" : ""}"><label class="row" for="${id}">
@@ -707,16 +706,16 @@ function render() {
   if (!S.plan) return;
   const R = realState();
   renderSub(); showTab();
-  renderHoy(R); renderPagos(); renderDeudas(R); renderRuta(); renderMas();
+  renderHoy(R); renderPagos(); renderDeudas(R); renderAvance(); renderMas();
 }
 
 function renderHoy(R) {
   const P = S.plan;
   $("debes").textContent = money(R.rem);
   const pct = P.total0 ? Math.min(100, Math.round((1 - R.rem / P.total0) * 1000) / 10) : 0;
-  $("trackFill").style.width = pct + "%"; $("train").style.left = pct + "%";
+  $("trackFill").style.width = pct + "%";
   $("pctTxt").textContent = `${pct}% liquidado`;
-  $("pagadoTxt").textContent = `Has pagado ${money(R.paid)} de ${money(P.total0)}.`;
+  $("pagadoTxt").textContent = `Pagado ${money0(R.paid)} de ${money0(P.total0)}`;
   const all = P.debts.flatMap(d => d.events).sort((a, b) => a.date - b.date || a.key.localeCompare(b.key));
   const pend = all.filter(e => !S.paid[e.id]);
   const nx = pend[0];
@@ -724,7 +723,7 @@ function renderHoy(R) {
   if (nx) {
     const late = nx.date < TODAY;
     nc.className = "card next" + (late ? " late" : "");
-    nc.innerHTML = `<div style="min-width:0"><span class="eyebrow" style="color:${late ? "var(--bad)" : "var(--accent)"}">${late ? "Pago vencido" : "Próximo pago"}</span>
+    nc.innerHTML = `<div style="min-width:0"><span class="eyebrow" style="color:${late ? "var(--bad)" : "var(--accent-text)"}">${late ? "Pago vencido" : "Próximo pago"}</span>
         <div class="amt">${money(nx.amount)}</div><div class="name">${esc(S.dm[nx.key].name)} · ${KIND[nx.kind].toLowerCase()}</div>
         <div class="muted" style="font-size:.82rem">${fmtD(nx.date)} · ${days(nx.date)}</div></div>
       <button type="button" class="btn" data-pay="${nx.id}" ${S.canWrite ? "" : "disabled"}>Ya lo pagué</button>`;
@@ -738,7 +737,7 @@ function renderHoy(R) {
   if (window.matchMedia("(min-width:640px)").matches) $("hoyStats").lastElementChild.style.gridColumn = "auto";
   $("upcoming").innerHTML = pend.slice(0, 5).map(e => payRow(e, "h-", false)).join("") || '<p class="muted">Todo lo del plan está pagado.</p>';
   $("seeAll").dataset.sel = CUR;
-  $("hoyNote").innerHTML = PNOTE[CUR] || "<strong>Sigue la ruta.</strong> Paga en fecha y guarda lo que sobra.";
+  $("hoyNote").innerHTML = PNOTE[CUR] || "<strong>Sigue el plan.</strong> Paga en fecha y guarda lo que sobra.";
 }
 
 function renderPagos() {
@@ -794,7 +793,7 @@ function renderDeudas(R) {
     ];
     const done = steps.filter(s => S.steps[s.id]).length;
     $("mission").innerHTML = `
-      <div class="card-h"><div><span class="eyebrow" style="color:var(--accent)">Misión</span><h2>Liquidar y cancelar Plata Card</h2></div><span class="mono muted" style="font-size:.85rem">${done}/${steps.length}</span></div>
+      <div class="card-h"><div><span class="eyebrow" style="color:var(--accent-text)">Misión</span><h2>Liquidar y cancelar Plata Card</h2></div><span class="mono muted" style="font-size:.85rem">${done}/${steps.length}</span></div>
       <div class="progress-dots" aria-hidden="true">${steps.map(s => `<i class="${S.steps[s.id] ? "on" : ""}"></i>`).join("")}</div>
       <div class="kv"><div><span>Intereses al mes hoy</span><b class="c-bad">~${money0(perMonth)}</b></div><div><span>Su mínimo</span><b>${money(31514)}</b></div>
         <div><span>Tu tasa (sin IVA)</span><b>99.5%</b></div><div><span>Liquidar el 28 nov</span><b>~${money0(liq ? liq.amount : 0)}</b></div></div>
@@ -829,7 +828,7 @@ function renderDeudas(R) {
   }).join("");
 }
 
-function renderRuta() {
+function renderAvance() {
   renderChart();
   const P = S.plan;
   let lastIdx = P.periods.findIndex(p => p.remaining === 0); if (lastIdx < 0) lastIdx = P.periods.length - 1;
@@ -837,15 +836,21 @@ function renderRuta() {
   const st = P.periods.slice(0, lastIdx + 1).map(p => {
     const cls = p.n < CUR ? "done" : p.n === CUR ? "now" : "next";
     const ends = P.debts.filter(x => x.zeroDate && periodOf(x.zeroDate) === p.n).map(x => x.name);
-    return `<li class="st ${cls}"><span class="node" aria-hidden="true"></span><div class="st-body">
-      <div class="st-top"><b>${esc(p.n === 1 ? "Arranque" : p.name)}</b><span class="mono">${esc(p.range)}</span></div>
-      ${p.n === CUR ? '<span class="here">Estás aquí</span>' : ""}
-      <div class="st-meta"><span>Pagas <b class="mono">${money0(p.debt)}</b></span><span>Te queda <b class="mono">${money0(p.free)}</b></span>${p.aguinaldo ? "<span>+ aguinaldo</span>" : ""}${p.extra ? "<span>Acapulco</span>" : ""}</div>
-      ${ends.length || p.n === zcP ? `<div class="xfer">${ends.map(n => `<span class="pill">${esc(n)}</span>`).join("")}${p.n === zcP ? '<span class="pill goal">Meta: sin préstamos ni tarjetas caras</span>' : ""}</div>` : ""}
-    </div></li>`;
+    const pc = P.total0 ? Math.round((1 - p.remaining / P.total0) * 100) : 0;
+    return `<div class="stage ${cls}">
+      <div class="sdate" aria-hidden="true"><span class="m">${MES[dM(p.start) - 1]}</span><span class="d">${dD(p.start)}</span></div>
+      <div class="sbody">
+        <div class="stop"><b>${esc(p.n === 1 ? "Arranque" : p.name)}</b>${p.n === CUR ? '<span class="tag liq">Ahora</span>' : ""}${p.aguinaldo ? '<span class="tag">+ aguinaldo</span>' : ""}${p.extra ? '<span class="tag">Acapulco</span>' : ""}<span class="sright"><b>${money0(p.remaining)}</b><span>queda al ${fmtD(p.end)}</span></span></div>
+        <div class="smeta"><span>Pagas <b class="mono">${money0(p.debt)}</b></span><span>Te queda <b class="mono">${money0(p.free)}</b></span></div>
+        ${ends.length || p.n === zcP ? `<div class="xfer">${ends.length ? '<span class="xl">Terminan:</span>' : ""}${ends.map(n => `<span class="pill">${esc(n)}</span>`).join("")}${p.n === zcP ? '<span class="pill goal">Meta: sin préstamos ni tarjetas caras</span>' : ""}</div>` : ""}
+        <div class="sbar" aria-hidden="true"><i style="width:${pc}%"></i></div>
+      </div>
+    </div>`;
   }).join("");
   const zAll = P.zAll === Infinity ? null : P.zAll;
-  $("metro").innerHTML = st + `<li class="st terminal"><span class="node" aria-hidden="true"></span><div class="st-body"><div class="st-top"><b>Deuda cero</b><span class="mono">${zAll ? fullDate(zAll) : "después del plan"}</span></div><span class="muted" style="font-size:.85rem">${S.aj.banamexLiquidar ? "Todo pagado, Banamex incluido." : "Último pago: Banamex. Antes de eso ya no debes nada caro."}</span></div></li>`;
+  $("stages").innerHTML = st + `<div class="stage final">
+      <div class="sdate" aria-hidden="true"><span class="m">${zAll ? MES[dM(zAll) - 1] : "—"}</span><span class="d">${zAll ? dD(zAll) : "—"}</span></div>
+      <div class="sbody"><div class="stop"><b>Deuda cero</b><span class="sright"><b class="c-ok">$0</b><span>100%</span></span></div><span class="muted" style="font-size:.85rem">${zAll ? fullDate(zAll) + ". " : ""}${S.aj.banamexLiquidar ? "Todo pagado, Banamex incluido." : "El último pago es Banamex; antes de eso ya no debes nada caro."}</span></div></div>`;
   // viajes
   const p1 = P.periods[0], p2 = P.periods[1], p4 = P.periods[3];
   $("trips").innerHTML = `
@@ -867,7 +872,7 @@ function renderChart() {
     const zeroLbl = i > 0 && data[i - 1].v > 0 && d.v === 0;
     return `<g class="bar" data-bar="${d.n}" tabindex="0" role="button" aria-pressed="${sel}" aria-label="${esc(d.n === 0 ? "Inicio, 7 de octubre" : P.periods[d.n - 1].name)}: ${money(d.v)}">
       <rect class="hit" x="${(padL + i * bw).toFixed(1)}" y="${padT - 18}" width="${bw.toFixed(1)}" height="${ch + 18}" rx="6"></rect>
-      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${fill}"></rect>
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${fill}" opacity="${sel || d.v === 0 ? 1 : 0.75}" ${sel ? 'stroke="var(--accent-text)" stroke-width="1.5"' : ""}></rect>
       ${zeroLbl ? `<text class="val" x="${cx(i).toFixed(1)}" y="${(H - padB - 6).toFixed(1)}" text-anchor="middle">$0</text>` : ""}
       <text class="lbl ${d.n === CUR ? "cur" : ""}" x="${cx(i).toFixed(1)}" y="${H - 6}" text-anchor="middle">${d.lbl}</text></g>`;
   }).join("");
@@ -886,7 +891,7 @@ function renderChart() {
       <div class="kv"><div><span>Deuda al cierre (plan)</span><b>${money(p.remaining)}</b></div>${realBox}</div>`;
   }
   $("chart").innerHTML = `<div class="card-h"><h2>Deuda restante</h2><span class="muted" style="font-size:.78rem">Toca una barra</span></div>
-    <div class="legend"><span><i class="sw"></i>Plan</span><span><i class="sw line"></i>Real (lo que palomeas)</span></div>
+    <div class="legend"><span><i class="sw"></i>Plan</span><span><i class="sw sel"></i>Periodo elegido</span><span><i class="sw line"></i>Real (lo que palomeas)</span></div>
     <svg viewBox="0 0 ${W} ${H}" aria-label="Deuda restante por periodo: plan y real"><line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--line-2)"></line>${bars}${realSvg}</svg>${det}`;
 }
 
@@ -938,7 +943,8 @@ document.addEventListener("keydown", ev => {
 /* ---------- Arranque ---------- */
 (function () {
   const h = (location.hash || "").slice(1), t = lsGet("dc.tab");
-  S.tab = TABS.includes(h) ? h : TABS.includes(t) ? t : "hoy";
+  const fix = x => x === "ruta" ? "avance" : x;
+  S.tab = TABS.includes(fix(h)) ? fix(h) : TABS.includes(fix(t)) ? fix(t) : "hoy";
 })();
 applyTheme();
 recompute(); syncForm();
