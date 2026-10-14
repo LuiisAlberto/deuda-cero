@@ -147,6 +147,17 @@ input[type=checkbox]:disabled{opacity:.5; cursor:default}
 .line.free{font-family:var(--f-display); font-stretch:110%; font-size:1.15rem; font-weight:800}
 .line.free.neg{color:var(--bad)}
 .perf{border-top:1px solid var(--line); margin:2px 0}
+.pas{display:flex; flex-direction:column; gap:6px; margin-top:-4px}
+.dstrip{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:3px}
+.dstrip i{height:10px; border-radius:3px; background:var(--blue)}
+.dstrip i.u{background:var(--line-2)}
+.dstrip i.t{background:var(--accent); box-shadow:0 0 0 2px var(--accent-soft)}
+.pas-l{display:flex; justify-content:space-between; gap:4px 10px; font-size:.8rem; color:var(--muted); flex-wrap:wrap}
+.pas-l b{color:var(--ink); font-family:var(--f-mono); font-weight:600}
+.pas-l .r b{color:var(--blue)}
+.have{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:baseline; gap:2px 12px; padding:12px 14px; border-radius:14px; background:var(--accent-tint); border:1px solid var(--accent-soft)}
+.have b{font-family:var(--f-mono); font-size:1.15rem; font-weight:600}
+.have .s{grid-column:1/-1; font-size:.8rem; color:var(--muted)}
 
 /* Deudas */
 .debt{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:12px 14px; display:flex; flex-direction:column; gap:7px}
@@ -671,6 +682,27 @@ function realAt(end) {
 const fullDate = n => `${dD(n)} ${MES[dM(n) - 1]} ${dY(n)}`;
 const days = n => { const d = daysBetween(TODAY, n); return d < 0 ? `vencido hace ${-d} ${-d === 1 ? "día" : "días"}` : d === 0 ? "hoy" : `en ${d} ${d === 1 ? "día" : "días"}`; };
 
+/* Pasajes: días de lunes a viernes que faltan desde hoy (incluido) hasta la siguiente nómina. */
+const T_DIA = 15200;
+const addDays = (n, k) => toInt(new Date(dY(n), dM(n) - 1, dD(n) + k));
+const isWork = n => { const w = new Date(dY(n), dM(n) - 1, dD(n)).getDay(); return w > 0 && w < 6; };
+function workdays(a, b) { let c = 0; for (let t = a; t <= b; t = addDays(t, 1)) if (isWork(t)) c++; return c; }
+function pasajes(p) {
+  const total = Math.round(p.transporte / T_DIA);
+  const endT = p.n === 1 ? PERIODS[1].start : p.end;   // el arranque cuenta hasta el 28 oct (16 días, dato tuyo)
+  const left = p.n < CUR ? 0 : p.n > CUR ? total : Math.min(total, workdays(TODAY, endT));
+  return { total, left, used: total - left, rest: left * T_DIA, spent: (total - left) * T_DIA, endT, today: p.n === CUR && isWork(TODAY) && left > 0 };
+}
+const nd = n => `${n} ${n === 1 ? "día" : "días"}`;
+const paidIn = p => p.events.reduce((s, e) => s + (S.paid[e.id] ? S.paid[e.id].monto : 0), 0);
+const pendIn = p => p.events.filter(e => !S.paid[e.id]).reduce((s, e) => s + e.amount, 0);
+/* Lo que debería haber en la cuenta hoy. Arranque: efectivo − pasajes usados − pagos hechos. Después: pasajes + pagos que faltan. */
+function cuentaHoy(p) {
+  const ps = pasajes(p);
+  return p.n === 1 ? { lbl: "Deberías tener hoy", v: p.income - ps.spent - paidIn(p), s: "si no gastaste en otra cosa" }
+                   : { lbl: "Por apartar", v: ps.rest + pendIn(p), s: "pasajes + pagos que faltan" };
+}
+
 /* ---------- Piezas ---------- */
 function payRow(e, pre, editable) {
   const d = S.dm[e.key], paid = S.paid[e.id], late = !paid && e.date < TODAY, id = pre + e.id;
@@ -730,9 +762,12 @@ function renderHoy(R) {
   } else { nc.className = "card next"; nc.innerHTML = `<div><span class="eyebrow">Próximo pago</span><div class="amt">Nada pendiente</div></div>`; }
   const p = P.periods[CUR - 1], nxtPay = PERIODS.find(q => q.n > 1 && q.start > TODAY);
   const zc = P.zCore === Infinity ? "Fuera del plan" : fullDate(P.zCore);
+  const ps = pasajes(p), ch = cuentaHoy(p);
   $("hoyStats").innerHTML = `
-    <div class="stat"><span class="eyebrow">Siguiente nómina</span><b>${nxtPay ? (daysBetween(TODAY, nxtPay.start) === 0 ? "Hoy" : daysBetween(TODAY, nxtPay.start) + " días") : "—"}</b><span class="s">${nxtPay ? fmtD(nxtPay.start) + " · " + money0(2477700) : ""}</span></div>
+    <div class="stat"><span class="eyebrow">Siguiente nómina</span><b>${nxtPay ? (daysBetween(TODAY, nxtPay.start) === 0 ? "Hoy" : daysBetween(TODAY, nxtPay.start) === 1 ? "Mañana" : daysBetween(TODAY, nxtPay.start) + " días") : "—"}</b><span class="s">${nxtPay ? fmtD(nxtPay.start) + " · " + money0(2477700) : ""}</span></div>
     <div class="stat"><span class="eyebrow">Te queda este periodo</span><b class="${p.free < 0 ? "c-bad" : ""}">${money0(p.free)}</b><span class="s">al ${fmtD(p.end)}</span></div>
+    <div class="stat"><span class="eyebrow">Pasajes que faltan</span><b>${money0(ps.rest)}</b><span class="s">${nd(ps.left)} · hasta ${fmtD(ps.endT)}</span></div>
+    <div class="stat"><span class="eyebrow">${ch.lbl}</span><b>${money0(ch.v)}</b><span class="s">${ch.s}</span></div>
     <div class="stat" style="grid-column:span 2"><span class="eyebrow">Sin préstamos ni tarjetas caras</span><b>${zc}</b><span class="s">${S.aj.banamexLiquidar ? "Banamex incluido: lo liquidas con el aguinaldo" : "Banamex a plazos termina en " + monthYear(S.dm.banamex.zeroDate)}</span></div>`;
   if (window.matchMedia("(min-width:640px)").matches) $("hoyStats").lastElementChild.style.gridColumn = "auto";
   $("upcoming").innerHTML = pend.slice(0, 5).map(e => payRow(e, "h-", false)).join("") || '<p class="muted">Todo lo del plan está pagado.</p>';
@@ -748,16 +783,21 @@ function renderPagos() {
   }
   el.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.chip) === S.sel)));
   const p = P.periods[S.sel - 1];
-  const paidSum = p.events.reduce((s, e) => s + (S.paid[e.id] ? S.paid[e.id].monto : 0), 0);
-  const pending = p.events.filter(e => !S.paid[e.id]).reduce((s, e) => s + e.amount, 0);
-  const incomeLbl = p.n === 1 ? "Efectivo que tienes" : p.aguinaldo ? "Nómina + aguinaldo" : "Nómina";
+  const paidSum = paidIn(p), pending = pendIn(p), ps = pasajes(p), now = p.n === CUR;
+  const incomeLbl = p.n === 1 ? "Efectivo al 7 oct" : p.aguinaldo ? "Nómina + aguinaldo" : "Nómina";
+  const pasHTML = now ? `<div class="pas">
+      <div class="dstrip" aria-hidden="true">${Array.from({ length: ps.total }, (_, i) => `<i class="${i < ps.used ? "u" : i === ps.used && ps.today ? "t" : ""}"></i>`).join("")}</div>
+      <div class="pas-l"><span>Usaste <b>${nd(ps.used)} · ${money0(ps.spent)}</b></span><span class="r">Faltan <b>${nd(ps.left)} · ${money0(ps.rest)}</b></span></div>
+      <div class="pas-l"><span>Lunes a viernes, hoy incluido, hasta el ${fmtD(ps.endT)}</span></div></div>` : "";
+  const ch = now ? cuentaHoy(p) : null;
   const L = (cls, a, b) => `<div class="line ${cls}"><span>${a}</span><span class="mono">${b}</span></div>`;
   $("ticket").innerHTML = `
     <div class="card-h"><div><span class="eyebrow">${p.n === 1 ? "Antes de la nómina" : "Periodo de nómina"}${p.n === CUR ? " · ahora" : ""}</span><h2 style="font-size:1.3rem">${esc(p.n === 1 ? "Arranque" : p.name)}</h2><span class="muted" style="font-size:.82rem">${esc(p.range)} ${p.n === 1 ? "" : dY(p.end)}</span></div>
       <div style="text-align:right"><span class="eyebrow">Te falta pagar</span><div class="mono" style="font-weight:600; font-size:1.1rem; color:${pending ? "var(--ink)" : "var(--ok)"}">${money(pending)}</div></div></div>
     ${L("", `<b>${incomeLbl}</b>`, `<b>${money(p.income)}</b>`)}
     ${p.carryIn ? L("", '<span class="muted">Traes ahorrado de antes</span>', money(p.carryIn)) : ""}
-    ${L("minus", `Transporte (${p.n === 1 ? 16 : 22} días × $152)`, money(p.transporte))}
+    ${L("minus", `Transporte (${ps.total} días × $152)`, money(p.transporte))}
+    ${pasHTML}
     ${p.citas ? L("minus", "Citas con tu novia", money(p.citas)) : ""}
     ${p.subs ? L("minus", p.n === 2 ? "Suscripciones en tarjeta (oct + nov)" : "Suscripciones en tarjeta", money(p.subs)) : ""}
     ${p.debito ? L("minus", "Spotify y Claude Pro (débito)", money(p.debito)) : ""}
@@ -771,6 +811,7 @@ function renderPagos() {
     <div class="line free ${p.free < 0 ? "neg" : ""}"><span>Te queda libre</span><span class="mono">${money(p.free)}</span></div>
     ${L("", '<span class="muted">Ahorro acumulado al cierre</span>', `<span style="color:${p.cum < 0 ? "var(--bad)" : "var(--ok)"}">${money(p.cum)}</span>`)}
     ${paidSum ? L("", '<span class="muted">Ya pagaste en este periodo</span>', money(paidSum)) : ""}
+    ${ch ? `<div class="have"><span class="eyebrow">${ch.lbl}</span><b>${money(ch.v)}</b><span class="s">${p.n === 1 ? `${money(p.income)} − ${money0(ps.spent)} de pasajes − ${money0(paidSum)} de pagos. Si tienes menos, algo más salió.` : `${money0(ps.rest)} de pasajes + ${money0(pending)} de pagos que faltan.`}</span></div>` : ""}
     ${PNOTE[p.n] ? `<div class="note">${PNOTE[p.n]}</div>` : ""}`;
 }
 
