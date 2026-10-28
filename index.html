@@ -6,7 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0C0F14">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -62,7 +63,8 @@ p{margin:0}
 .appbar{position:sticky; top:env(safe-area-inset-top,0px); z-index:15; background:var(--bg); border-bottom:1px solid var(--line)}
 .appbar-in{max-width:760px; margin:0 auto; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px}
 .brand{display:flex; align-items:center; gap:10px; min-width:0}
-.logo{width:34px; height:34px; border-radius:11px; background:var(--accent); color:var(--accent-ink); display:grid; place-items:center; font-family:var(--f-display); font-stretch:125%; font-weight:900; font-size:1.05rem; flex:none}
+.logo{width:34px; height:34px; border-radius:8px; display:block; flex:none; box-shadow:0 0 0 1px var(--line)}
+.logo svg{display:block; border-radius:8px}
 .brand b{font-family:var(--f-display); font-stretch:118%; font-weight:800; font-size:1.02rem; display:block; line-height:1.15}
 .sub{font-size:.76rem; color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .dot{width:7px; height:7px; border-radius:50%; background:var(--faint); flex:none}
@@ -288,7 +290,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
 <header class="appbar">
   <div class="appbar-in">
     <div class="brand">
-      <span class="logo" aria-hidden="true">0</span>
+      <span class="logo" aria-hidden="true"><svg viewBox="0 0 512 512" width="34" height="34"><defs><radialGradient id="dzbg" cx="28%" cy="18%" r="95%"><stop offset="0" stop-color="#202B3D"/><stop offset=".55" stop-color="#121925"/><stop offset="1" stop-color="#0A0D13"/></radialGradient><linearGradient id="dzyl" gradientUnits="userSpaceOnUse" x1="256" y1="116" x2="256" y2="416"><stop offset="0" stop-color="#FFE47E"/><stop offset="1" stop-color="#FFB400"/></linearGradient><linearGradient id="dzgr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#62E8A6"/><stop offset="1" stop-color="#1FA866"/></linearGradient></defs><rect width="512" height="512" rx="116" fill="url(#dzbg)"/><path d="M 256 116 A 116 150 0 1 1 256 416 A 116 150 0 1 1 256 116" fill="none" stroke="#243650" stroke-width="64"/><path d="M 256 116 A 116 150 0 1 1 256 416 A 116 150 0 1 1 256 116" fill="none" stroke="url(#dzyl)" stroke-width="64" stroke-linecap="round" pathLength="100" stroke-dasharray="80 100"/><g transform="translate(256 116)"><circle r="54" fill="#0B0F16"/><circle r="45" fill="url(#dzgr)"/><path d="M -19 1 L -5 15 L 21 -13" fill="none" stroke="#04140B" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></g></svg></span>
       <div style="min-width:0"><b>Deuda Cero</b><span class="sub"><span class="dot" id="dot"></span><span id="sub">Cargando…</span></span></div>
     </div>
     <button type="button" class="iconbtn" id="themeBtn" aria-label="Cambiar a modo claro"></button>
