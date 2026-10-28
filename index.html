@@ -364,7 +364,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
       </div>
       <footer class="fine" style="padding:4px 2px">
         <p id="storeLong"></p>
-        <p>Cifras con los datos que diste desde el 7 de octubre de 2026 y tu estado de cuenta Banamex con corte al 8 de septiembre. Los intereses de Plata son un estimado con 99.5% anual + IVA. Antes de cada liquidación, confirma el monto en la app.</p>
+        <p>Cifras con tus estados de cuenta de octubre 2026 (Plata, Stori, Bradescard, Klar, Nu y Banamex) y los préstamos que diste el 7 de octubre. Los intereses de Plata, Stori y Klar son estimados con la tasa de cada estado de cuenta + IVA. Antes de cada liquidación, confirma el monto en la app.</p>
         <p>No soy asesor financiero: esto es un plan de flujo de efectivo para que decidas con números claros.</p>
       </footer>
     </div>
@@ -404,15 +404,17 @@ const SUBS = [
   { name: "Spotify (tuyo)", c: 8000, pay: "deb", day: "Día 5" },
   { name: "Claude Pro (20 USD · $350–$400)", c: 40000, pay: "deb", day: "Día 29" },
 ];
-/* Banamex: estado de cuenta con corte 8 sep 2026. 3 diferimientos al 15% anual + 2 compras Amazon a MSI.
-   Pago mensual (capital + interés + IVA del interés) con fecha límite ~28 de cada mes. */
-const BANAMEX_SCHED = [166401, 166201, 166000, 128291, 82953, 82820, 82683, 82546, 82403, 36235, 36173];
+/* Banamex: estados de cuenta con corte 8 sep y 8 oct 2026. 3 diferimientos al 15% anual + 2 compras Amazon a MSI.
+   Pago mensual (capital + interés + IVA del interés) con fecha límite ~28 de cada mes.
+   28 oct: pagaste $2,236.69 (incluye Netflix, seguro de sep y una compra Amazon de $114.60). */
+const BANAMEX_SCHED = [223669, 166201, 166000, 128291, 82953, 82820, 82683, 82546, 82403, 36235, 36173];
 const SUBS_TC = SUBS.filter(x => x.pay === "tc").reduce((s, x) => s + x.c, 0);
 const SUBS_DEB = SUBS.filter(x => x.pay === "deb").reduce((s, x) => s + x.c, 0);
 const SUBS_TOTAL = SUBS_TC + SUBS_DEB;
 const CRUNCHY = 28475, CRUNCHY_P = [7, 8, 9, 10];   // anualidad Crunchyroll en 4 pagos, abr–jul 2027
 /* A débito: Spotify (día 5; el de octubre ya se cobró) y Claude Pro (día 29): un cargo de cada uno por periodo desde el 28 oct. */
 const NP = 16;
+const NETFLIX_OCT = 26900;
 
 function buildPeriods() {
   const ps = [];
@@ -469,23 +471,26 @@ function buildDebts(aj) {
     { key: "creditea", cat: "Préstamo", name: "Creditea", cuota: 48691, saldo: 632983, freq: "Quincenal · 14 y 28",
       sched: quincenalDates(D(2026, 10, 14), [14, 28], 13).map(d => [d, 48691]), kind: "cuota", liq: L(AGUINALDO),
       info: "11 de 24 pagados · faltan 13" },
-    { key: "plata", cat: "Tarjeta", name: "Plata Card", cuota: 31514, saldo: 524830, freq: "Mensual · día 10",
-      sched: monthlyDates(2026, 10, 10, 40).map(d => [d, 31514]), kind: "minimo", liq: L(D(2026, 11, 28)),
-      apr: 0.995, since: D(2026, 10, 7), cancel: true,
-      info: "99.5% anual + IVA: el mínimo no alcanza a cubrir los intereses" },
-    { key: "storitc", cat: "Tarjeta", name: "Stori TC", cuota: 0, saldo: 214211, freq: "Corte día 12",
-      sched: [], kind: "minimo", liq: L(D(2026, 10, 28)),
-      info: "Al día: mínimo $0 en octubre. Se liquida completa el 28 oct" },
-    { key: "bradescard", cat: "Tarjeta", name: "Bradescard", cuota: 112677, saldo: 275812, freq: "Mensual · día 13",
-      sched: monthlyDates(2026, 10, 13, 40).map(d => [d, 112677]), kind: "minimo", liq: L(D(2026, 10, 28)),
-      info: "Mínimo $1,126.77" },
-    { key: "klar", cat: "Tarjeta", name: "Klar", cuota: 66593, saldo: 204214, freq: "Mensual · día 15",
-      sched: monthlyDates(2026, 10, 15, 40).map(d => [d, 66593]), kind: "minimo", liq: L(D(2026, 10, 28)),
-      info: "Mínimo $665.93" },
-    { key: "nutc", cat: "Tarjeta", name: "Nu TC", cuota: 195256, saldo: 542279, freq: "Diferido · fin de mes",
-      sched: [[D(2026, 10, 31), 195256], [D(2026, 11, 30), 130931], [D(2026, 12, 31), 130931],
-              [D(2027, 1, 31), 28387], [D(2027, 2, 28), 28387], [D(2027, 3, 31), 28387]], kind: "cuota", liq: null,
-      info: "Oct $1,952.56 · nov–dic $1,309.31 · ene–mar $283.87" },
+    /* Tarjetas: estados de cuenta de octubre 2026. saldo = deuda al corte + lo que pagaste antes del corte. */
+    { key: "plata", cat: "Tarjeta", name: "Plata Card", cuota: 85000, saldo: 812486, freq: "Corte día 12 · paga el 10",
+      sched: [[D(2026, 10, 10), 31514], [D(2026, 11, 10), 85000], [D(2026, 12, 10), 85000]], kind: "minimo", liq: L(D(2026, 11, 28)),
+      apr: 0.999, since: D(2026, 10, 12), cancel: true,
+      info: "Corte 12 oct: debes $7,809.72 al 99.9% anual + IVA. Mínimo $850 (el 10 nov)" },
+    { key: "storitc", cat: "Tarjeta", name: "Stori TC", cuota: 117098, saldo: 214211, freq: "Corte día 12 · paga el 4",
+      sched: [[D(2026, 11, 4), 117098, "sinint"]], kind: "minimo", liq: L(D(2026, 11, 28)),
+      apr: 0.699, since: D(2026, 11, 4),
+      info: "Corte 12 oct: $1,170.98 sin intereses + $971.13 a meses al 69.9%" },
+    { key: "bradescard", cat: "Tarjeta", name: "Bradescard", cuota: 370023, saldo: 663113, freq: "Corte día 20 · paga el 13",
+      sched: [[D(2026, 10, 13), 112677], [D(2026, 11, 13), 370023, "sinint"]], kind: "minimo", liq: L(D(2026, 11, 28)),
+      info: "Corte 20 oct: saldo $5,504.36 (incluye pagos fijos y anualidad). Mínimo $1,535" },
+    { key: "klar", cat: "Tarjeta", name: "Klar", cuota: 66592, saldo: 249226, freq: "Corte día 5 · paga el 15",
+      sched: [[D(2026, 10, 15), 66593], [D(2026, 11, 15), 66592]], kind: "minimo", liq: L(AGUINALDO),
+      apr: 0.3361, since: D(2026, 10, 5),
+      info: "Corte 5 oct: saldo $2,492.26 al 33.6%. El mínimo de nov es estimado: confírmalo después del corte del 5 nov" },
+    { key: "nutc", cat: "Tarjeta", name: "Nu TC", cuota: 201178, saldo: 553572, freq: "Corte día 17 · paga el 28",
+      sched: [[D(2026, 10, 28), 201178], [D(2026, 11, 28), 133158], [D(2026, 12, 28), 132459],
+              [D(2027, 1, 28), 29181], [D(2027, 2, 28), 28931], [D(2027, 3, 28), 28665]], kind: "cuota", liq: L(AGUINALDO),
+      info: "Diferidos al 59.9% y 79.9%. Pagos con IVA: oct $2,011.78 · nov ~$1,332 · dic ~$1,325 · ene–mar ~$290" },
     { key: "banamex", cat: "Tarjeta", name: "Banamex", cuota: BANAMEX_SCHED[0], saldo: BANAMEX_SCHED.reduce((s, x) => s + x, 0),
       freq: "Mensual · día 28 (corte día 8)",
       sched: monthlyDates(2026, 10, 28, BANAMEX_SCHED.length).map((d, i) => [d, BANAMEX_SCHED[i]]), kind: "cuota",
@@ -504,14 +509,14 @@ function buildDebts(aj) {
 function planDebt(dbt) {
   const ev = []; let rem = dbt.saldo, acc = 0, last = dbt.since || 0;
   const rd = dbt.apr ? dbt.apr / 360 * 1.16 : 0;            // interés diario estimado con IVA
-  const accrue = d => { if (rd && last && d > last) acc += Math.round(rem * rd * daysBetween(last, d)); last = d; };
-  for (const [d, a] of dbt.sched) {
+  const accrue = d => { if (d > last) { if (rd && last) acc += Math.round(rem * rd * daysBetween(last, d)); last = d; } };
+  for (const [d, a, k] of dbt.sched) {
     if (rem <= 0) break;
     if (dbt.liq && d >= dbt.liq) break;
     accrue(d);
     const amt = Math.min(a, rem + acc); if (amt <= 0) continue;
     const toInt = Math.min(acc, amt), toPrin = amt - toInt; acc -= toInt; rem -= toPrin;
-    ev.push({ date: d, amount: amt, principal: toPrin, interest: toInt, kind: rem === 0 ? "ultimo" : dbt.kind });
+    ev.push({ date: d, amount: amt, principal: toPrin, interest: toInt, kind: rem === 0 ? "ultimo" : k || dbt.kind });
   }
   if (dbt.liq && rem > 0) { accrue(dbt.liq); ev.push({ date: dbt.liq, amount: rem + acc, principal: rem, interest: acc, kind: "liquidar" }); rem = 0; acc = 0; }
   dbt.interestTotal = ev.reduce((s, x) => s + (x.interest || 0), 0);
@@ -538,7 +543,7 @@ function buildPlan(aj) {
     p.extra = dM(p.start) === 12 && dY(p.start) === 2026 ? Math.round(aj.acapulco * 100) : 0;
     p.otros = Math.round(aj.otros * 100 * (p.n === 1 ? 16 / 22 : 1));
     const subsC = Math.round(aj.subs * 100);
-    p.subs = p.n === 1 ? 0 : p.n === 2 ? 2 * subsC : subsC;      // oct ya va en tarjeta: se paga con la nómina del 28
+    p.subs = p.n === 1 ? 0 : p.n === 2 ? 2 * subsC - NETFLIX_OCT : subsC;   // oct + nov; el Netflix de oct ya va en el pago Banamex del 28 oct
     p.debito = p.n === 1 ? 0 : Math.round(aj.debito * 100);
     p.crunchy = CRUNCHY_P.includes(p.n) ? CRUNCHY : 0;
     p.debt = p.events.reduce((s, e) => s + e.amount, 0);
@@ -548,7 +553,7 @@ function buildPlan(aj) {
     paidCum += p.debt - p.interest; p.remaining = total0 - paidCum;
   }
   const lastDate = list => list.reduce((m, d) => d.zeroDate === null ? Infinity : Math.max(m, d.zeroDate), 0);
-  const zAll = lastDate(debts), zCore = lastDate(debts.filter(d => d.key !== "banamex"));
+  const zAll = lastDate(debts), zCore = lastDate(debts.filter(d => d.key !== "banamex" && d.cat !== "Concierto"));   // préstamos y tarjetas caras
   return { debts, periods, total0, zAll, zCore };
 }
 
@@ -561,11 +566,11 @@ if (typeof module !== "undefined") module.exports = { buildPlan, PERIODS, money,
 
 /* ===== App ===== */
 const DEFAULT_AJ = { banamexLiquidar: false, otros: 0, acapulco: 4000, subs: 1313.49, debito: 480 };
-const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago" };
+const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago", sinint: "Sin intereses" };
 const PNOTE = {
   1: "<strong>Modo contención.</strong> Solo mínimos y cuotas obligatorias para seguir al corriente en Buró. Nada de salidas pagadas ni compras con tarjeta hasta el 28.",
-  2: "<strong>El kayak va aquí.</strong> Sale de los $2,500 de citas (a mitades con tu novia). Pasa tus suscripciones a débito antes de congelar las tarjetas. Lo que sobre, guárdalo.",
-  3: "<strong>Llega el aguinaldo (~15 dic).</strong> Paga primero las cuotas del 28 al 30 de noviembre con tu nómina; cuando caiga el aguinaldo pide en cada app el monto para liquidar.",
+  2: "<strong>Mes apretado: casi no queda margen.</strong> El 4 nov paga Stori sin intereses y el 13 nov Bradescard completo, para que no te cobren 69.9% y 94.9%. Ni Plata ni Bradescard alcanzan a liquidarse este mes. El kayak sale de los $2,500 de citas (a mitades con tu novia).",
+  3: "<strong>El 28 nov liquida Plata, Bradescard y Stori TC con tu nómina.</strong> Hasta el aguinaldo (~15 dic) casi todo tu sueldo se va a pagos: no gastes de más esas dos semanas. Con el aguinaldo liquida los 4 préstamos, Klar y Nu TC; pide en cada app el monto exacto.",
   4: "<strong>Acapulco.</strong> Tu parte del viaje ya está apartada en este periodo, de contado.",
 };
 const TABS = ["hoy", "pagos", "deudas", "avance", "mas"];
@@ -707,7 +712,7 @@ function cuentaHoy(p) {
 function payRow(e, pre, editable) {
   const d = S.dm[e.key], paid = S.paid[e.id], late = !paid && e.date < TODAY, id = pre + e.id;
   const when = e.kind === "liquidar" && e.date === AGUINALDO ? "Aguin." : fmtD(e.date);
-  const tags = [`<span class="tag ${e.kind === "liquidar" ? "liq" : e.kind === "ultimo" ? "last" : ""}">${KIND[e.kind]}</span>`];
+  const tags = [`<span class="tag ${e.kind === "liquidar" ? "liq" : e.kind === "ultimo" ? "last" : e.kind === "sinint" ? "warn" : ""}">${KIND[e.kind]}</span>`];
   if (e.kind === "liquidar" && e.interest) tags.push(`<span class="tag bad">+~${money0(e.interest)} intereses</span>`);
   if (late) tags.push('<span class="tag bad">Vencido</span>');
   if (paid) tags.push('<span class="tag ok">Pagado</span>');
@@ -799,7 +804,7 @@ function renderPagos() {
     ${L("minus", `Transporte (${ps.total} días × $152)`, money(p.transporte))}
     ${pasHTML}
     ${p.citas ? L("minus", "Citas con tu novia", money(p.citas)) : ""}
-    ${p.subs ? L("minus", p.n === 2 ? "Suscripciones en tarjeta (oct + nov)" : "Suscripciones en tarjeta", money(p.subs)) : ""}
+    ${p.subs ? L("minus", p.n === 2 ? "Suscripciones en tarjeta (oct + nov, sin el Netflix de oct)" : "Suscripciones en tarjeta", money(p.subs)) : ""}
     ${p.debito ? L("minus", "Spotify y Claude Pro (débito)", money(p.debito)) : ""}
     ${p.crunchy ? L("minus", "Crunchyroll anual (1 de 4)", money(p.crunchy)) : ""}
     ${p.extra ? L("minus", "Tu parte de Acapulco", money(p.extra)) : ""}
@@ -824,11 +829,11 @@ function renderDeudas(R) {
     const rd = d.apr / 360 * 1.16, perMonth = Math.round((d.saldo - (mins[0] ? mins[0].principal : 0)) * rd * 30), per1000 = Math.round(100000 * rd * 30);
     const steps = [
       { id: "plata-min-oct", when: "10 oct", txt: `Paga el mínimo (${money(mins[0] ? mins[0].amount : 31514)}).` },
-      { id: "plata-cargos", when: "Antes 28 nov", txt: "Revisa si tienes cargos automáticos o suscripciones en Plata y pásalos a débito." },
+      { id: "plata-cargos", when: "Antes 28 nov", txt: "Cancela en la app el «Seguro» que Plata te cobra cada mes (~$65–$81) y pasa a débito cualquier cargo automático." },
       { id: "plata-min-nov", when: "10 nov", txt: `Paga el mínimo (${money(mins[1] ? mins[1].amount : 31514)}). Casi todo se va a intereses.` },
       { id: "plata-liquidar", when: "28 nov", txt: `En la app: Pagar → Deuda total. Estimado ${money(liq ? liq.amount : 0)}.` },
       { id: "plata-cero", when: "1–2 días", txt: "Espera a que la app marque $0 de deuda." },
-      { id: "plata-cancelar", when: "Al ver $0", txt: "Pide la cancelación por el chat de la app (o al 55 5232 8040). Sin comisión; queda cancelada al día hábil siguiente." },
+      { id: "plata-cancelar", when: "Al ver $0", txt: "Pide la cancelación por el chat de la app (o al 55 9777 9000, 24 horas). Sin comisión; queda cancelada al día hábil siguiente." },
       { id: "plata-constancia", when: "Mismo día", txt: "Pide tu constancia de terminación y finiquito." },
       { id: "plata-buro", when: "1–2 meses", txt: "Revisa tu Buró: debe decir cuenta cerrada sin adeudo." },
     ];
@@ -836,14 +841,14 @@ function renderDeudas(R) {
     $("mission").innerHTML = `
       <div class="card-h"><div><span class="eyebrow" style="color:var(--accent-text)">Misión</span><h2>Liquidar y cancelar Plata Card</h2></div><span class="mono muted" style="font-size:.85rem">${done}/${steps.length}</span></div>
       <div class="progress-dots" aria-hidden="true">${steps.map(s => `<i class="${S.steps[s.id] ? "on" : ""}"></i>`).join("")}</div>
-      <div class="kv"><div><span>Intereses al mes hoy</span><b class="c-bad">~${money0(perMonth)}</b></div><div><span>Su mínimo</span><b>${money(31514)}</b></div>
-        <div><span>Tu tasa (sin IVA)</span><b>99.5%</b></div><div><span>Liquidar el 28 nov</span><b>~${money0(liq ? liq.amount : 0)}</b></div></div>
-      <p style="font-size:.88rem">Con el mínimo la deuda crece: los intereses (~${money0(perMonth)} con IVA) son más que el mínimo. El 28 de noviembre es la primera fecha en que tu efectivo alcanza para liquidarla sin quedarte sin colchón. Cada $1,000 que le abones antes te ahorra ~${money0(per1000)} al mes.</p>
+      <div class="kv"><div><span>Intereses al mes hoy</span><b class="c-bad">~${money0(perMonth)}</b></div><div><span>Su mínimo</span><b>${money(d.cuota)}</b></div>
+        <div><span>Tu tasa (sin IVA)</span><b>${(d.apr * 100).toFixed(1)}%</b></div><div><span>Liquidar el 28 nov</span><b>~${money0(liq ? liq.amount : 0)}</b></div></div>
+      <p style="font-size:.88rem">${perMonth >= d.cuota ? `Con el mínimo la deuda crece: los intereses (~${money0(perMonth)} con IVA) son más que el mínimo.` : `Con el mínimo casi no baja: de ${money0(d.cuota)}, ~${money0(perMonth)} se van a intereses.`} El 28 de noviembre es la primera fecha en que tu efectivo alcanza para liquidarla sin quedarte sin colchón. Cada $1,000 que le abones antes te ahorra ~${money0(per1000)} al mes.</p>
       <details class="more"><summary>Ver los ${steps.length} pasos</summary>
         <div class="rows">${steps.map(s => `<div class="item ${S.steps[s.id] ? "done" : ""}"><label class="row" for="st-${s.id}" style="grid-template-columns:26px 74px minmax(0,1fr)">
           <input type="checkbox" id="st-${s.id}" data-step="${s.id}" ${S.steps[s.id] ? "checked" : ""} ${S.canWrite ? "" : "disabled"}>
           <span class="date mono">${esc(s.when)}</span><span class="name" style="font-weight:500">${esc(s.txt)}</span></label></div>`).join("")}</div>
-        <p class="muted" style="font-size:.76rem">Tasa promedio oficial de Plata: 105.91% anual sin IVA; CAT promedio 169.3% sin IVA (folleto Plata Card, calculado el 18 sep 2026).</p>
+        <p class="muted" style="font-size:.76rem">Tu estado de cuenta (corte 12 oct 2026): tasa fija de 99.9% anual sin IVA; CAT de 161.46% sin IVA.</p>
       </details>`;
     const det = $("mission").querySelector("details"); if (S.missionOpen) det.open = true;
     det.addEventListener("toggle", () => { S.missionOpen = det.open; });
