@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0C0F14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Deuda Cero">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Plan Maestro Deuda Cero</title>
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px)}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -147,6 +154,29 @@ input[type=checkbox]:disabled{opacity:.5; cursor:default}
 .line.free{font-family:var(--f-display); font-stretch:110%; font-size:1.15rem; font-weight:800}
 .line.free.neg{color:var(--bad)}
 .perf{border-top:1px solid var(--line); margin:2px 0}
+details.stmt{border-top:1px solid var(--line); padding-top:4px; margin-top:2px}
+details.stmt summary{cursor:pointer; list-style:none; font-weight:600; font-size:.86rem; color:var(--blue); min-height:40px; display:flex; align-items:center}
+details.stmt summary::-webkit-details-marker{display:none}
+details.stmt summary::after{content:"＋"; margin-left:6px; font-weight:400}
+details.stmt[open] summary::after{content:"－"}
+.sx{display:flex; flex-direction:column; gap:7px; font-size:.86rem; padding-bottom:4px}
+.sx .r{display:flex; justify-content:space-between; gap:10px; align-items:baseline}
+.sx .r .mono{white-space:nowrap}
+.sx .r.tot{font-weight:700; border-top:1px solid var(--line); padding-top:7px}
+.sx .r small{display:block; color:var(--muted); font-size:.78rem}
+.sx .tg{display:flex; flex-wrap:wrap; gap:6px}
+.sx .eyebrow{margin-top:6px}
+.spend .big2{font-family:var(--f-display); font-stretch:115%; font-weight:900; font-size:2.4rem; line-height:1; font-variant-numeric:tabular-nums}
+.spend .s{font-size:.84rem; color:var(--muted)}
+.spend form{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr); gap:8px}
+.spend form .full{grid-column:1/-1}
+.spend input{padding:11px 12px; border:1px solid var(--line-2); border-radius:12px; background:var(--raise); min-height:46px; width:100%; color:var(--ink); font:inherit}
+.spend input.mono{font-family:var(--f-mono)}
+.spend .seg{padding:3px}
+.glist .gi{display:grid; grid-template-columns:50px minmax(0,1fr) auto 40px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); font-size:.88rem}
+.glist .gi:last-child{border-bottom:0}
+.glist .x{width:40px; height:40px; border-radius:10px; border:1px solid var(--line); background:var(--raise); color:var(--muted); cursor:pointer; font-size:1rem}
+.citas-l{display:flex; justify-content:space-between; gap:8px; font-size:.84rem; color:var(--muted)}
 .pas{display:flex; flex-direction:column; gap:6px; margin-top:-4px}
 .dstrip{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:3px}
 .dstrip i{height:10px; border-radius:3px; background:var(--blue)}
@@ -275,6 +305,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
       <div class="track-l"><span id="pagadoTxt"></span><span id="pctTxt">0% liquidado</span></div>
     </div>
     <div class="card next" id="nextCard"></div>
+    <div class="card spend" id="spendCard"></div>
     <div class="grid3" id="hoyStats"></div>
     <div class="card">
       <div class="card-h"><h2>Lo que sigue</h2><button type="button" class="btn ghost sm" data-go="pagos" id="seeAll">Ver el periodo</button></div>
@@ -308,6 +339,10 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
 
   <!-- MÁS -->
   <section class="panel" id="tab-mas" aria-label="Más" hidden>
+    <div class="card" id="installCard" hidden>
+      <div class="card-h"><div><span class="eyebrow" style="color:var(--accent-text)">App</span><h2>Instálala en tu celular</h2></div><button type="button" class="btn sm" id="installBtn" hidden>Instalar</button></div>
+      <p style="font-size:.88rem; margin:0" id="installHelp">En Chrome toca ⋮ y luego «Instalar app» o «Agregar a la pantalla principal». Queda con su ícono y abre aunque no tengas internet.</p>
+    </div>
     <div class="seg" role="group" aria-label="Secciones">
       <button type="button" data-mas="gastos">Gastos fijos</button><button type="button" data-mas="reglas">Reglas</button><button type="button" data-mas="ajustes">Ajustes</button>
     </div>
@@ -315,7 +350,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
       <div class="card">
         <div class="card-h"><h2>Suscripciones y celular</h2><span class="mono muted" id="subsTotal" style="font-size:.85rem"></span></div>
         <div class="rows" id="subsList"></div>
-        <div class="note"><strong>Spotify, Movistar y Claude Pro van a débito: márcalos en Pagos.</strong> Las demás llegan en el estado de cuenta de cada tarjeta y se pagan dentro de su pago del mes. El plan las suma aparte porque los montos de tarjeta que tiene no las incluyen. Cuando liquides Klar, Nu y Stori, pasa las que tengas ahí a Banamex: pagando su total cada mes no cobra intereses y te da un mes para pagarlas.</div>
+        <div class="note"><strong>Spotify, Movistar, Google One y Claude Pro van a débito: márcalos en Pagos.</strong> Netflix (Banamex), Prime (Nu) y Spotify Duo (Stori) llegan en el estado de cuenta de su tarjeta y ya van sumados dentro del pago de esa tarjeta en Pagos. Cuando liquides Nu y Stori, pasa Prime y Spotify Duo a Banamex: pagando su total cada mes no cobra intereses y te da un mes para pagarlas.</div>
         <ul class="tips">
           <li><b>Spotify:</b> pagas $80 + $189 del Duo de tus papás = $269. Revisa si un plan Familiar les sale en menos.</li>
           <li><b>Celular:</b> bajó de $369 a $209: son $1,920 al año para tu fondo.</li>
@@ -354,7 +389,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
         <h2>Ajustes del plan</h2>
         <form class="form" id="adjForm" novalidate>
           <label class="check" for="banamexLiquidar"><input type="checkbox" id="banamexLiquidar"><span><b>Liquidar Banamex con el aguinaldo</b><br><span class="hint">Tus diferidos cobran 15% anual: es tu deuda más barata. Liquidarla te ahorra unos $400 de intereses. Es opcional: primero arma tu colchón.</span></span></label>
-          <div class="field"><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $752: Netflix, Google, Prime y Spotify Duo. El seguro Banamex ya está cancelado.</span></div>
+          <div class="field" hidden><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $752: Netflix, Google, Prime y Spotify Duo. El seguro Banamex ya está cancelado.</span></div>
           <div class="field" hidden><label for="debito">Suscripciones a débito al mes</label><input type="number" id="debito" min="0" step="1" inputmode="decimal"><span class="hint">Spotify $80 (día 5) + celular Movistar $209 (día 8) + Claude Pro $400 (día 29; 20 dólares, varía entre $350 y $400).</span></div>
           <div class="field"><label for="otros">Otros gastos tuyos al mes</label><input type="number" id="otros" min="0" step="1" inputmode="decimal"><span class="hint">Comida fuera, cosas personales. En 0, todo lo que sobra se ve como ahorro.</span></div>
           <div class="field"><label for="acapulco">Tu parte del viaje a Acapulco</label><input type="number" id="acapulco" min="0" step="1" inputmode="decimal"><span class="hint">Sale de la nómina del 28 de diciembre.</span></div>
@@ -394,14 +429,38 @@ const toInt = dt => D(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
 const daysBetween = (a, b) => Math.round((new Date(dY(b), dM(b) - 1, dD(b)) - new Date(dY(a), dM(a) - 1, dD(a))) / 864e5);
 
 const AGUINALDO = D(2026, 12, 15);   // fecha estimada (~15 dic)
-/* Suscripciones y celular (datos tuyos, mensuales). Hoy se cobran a tarjetas de crédito. */
-const SUBS = [
-  { name: "Netflix (en Banamex)", c: 26900, pay: "tc" }, { name: "Google", c: 16500, pay: "tc" },
-  { name: "Amazon Prime", c: 12900, pay: "tc" }, { name: "Celular Movistar", c: 20900, pay: "deb", day: "Día 8", dn: 8, key: "movistar", short: "Movistar" },
-  { name: "Spotify Duo (tus papás)", c: 18900, pay: "tc" },
+/* Tarjetas: día de corte, día límite (dueNext = el límite cae el mes siguiente al corte) y último estado de cuenta revisado. */
+const CARDS = {
+  banamex:    { name: "Banamex", cut: 8, due: 28, dueNext: false, lastCut: D(2026, 10, 8) },
+  nutc:       { name: "Nu", cut: 17, due: 28, dueNext: false, lastCut: D(2026, 10, 17) },
+  storitc:    { name: "Stori", cut: 12, due: 4, dueNext: true, lastCut: D(2026, 10, 12) },
+  plata:      { name: "Plata", cut: 12, due: 10, dueNext: true, lastCut: D(2026, 10, 12) },
+  bradescard: { name: "Bradescard", cut: 20, due: 13, dueNext: true, lastCut: D(2026, 10, 20) },
+  klar:       { name: "Klar", cut: 5, due: 15, dueNext: false, lastCut: D(2026, 10, 5) },
+};
+/* Estado de cuenta en el que cae un cargo hecho el día c → [fecha de corte, fecha límite] */
+function stmtFor(card, c) {
+  const k = CARDS[card]; let y = dY(c), m = dM(c);
+  if (dD(c) > k.cut) [y, m] = addM(y, m, 1);
+  const cut = D(y, m, Math.min(k.cut, lastDay(y, m)));
+  const [yy, mm] = k.dueNext ? addM(y, m, 1) : [y, m];
+  return [cut, D(yy, mm, Math.min(k.due, lastDay(yy, mm)))];
+}
+/* Suscripciones en tarjeta de crédito: se pagan dentro del pago de esa tarjeta. Al liquidar una tarjeta pasan a Banamex. */
+const TC_SUBS = [
+  { key: "netflix", name: "Netflix", c: 26900, card: "banamex", dn: 6 },
+  { key: "prime", name: "Amazon Prime", c: 12900, card: "nutc", dn: 27 },
+  { key: "duo", name: "Spotify Duo (tus papás)", c: 18900, card: "storitc", dn: 15 },
+];
+const TC_ONEOFF = [{ key: "seguro", name: "Seguro Banamex Vida (último, ya cancelado)", c: 19249, card: "banamex", date: D(2026, 10, 10) }];
+/* Suscripciones a débito: se marcan con check en cada periodo. */
+const DEB_SUBS = [
   { name: "Spotify (tuyo)", c: 8000, pay: "deb", day: "Día 5", dn: 5, key: "spotify", short: "Spotify" },
+  { name: "Celular Movistar", c: 20900, pay: "deb", day: "Día 8", dn: 8, key: "movistar", short: "Movistar" },
+  { name: "Google One (Banamex débito)", c: 16900, pay: "deb", day: "Día 21", dn: 21, key: "google", short: "Google One" },
   { name: "Claude Pro (20 USD · $350–$400)", c: 40000, pay: "deb", day: "Día 29", dn: 29, key: "claude", short: "Claude Pro" },
 ];
+const SUBS = [...TC_SUBS.map(s => ({ name: s.name, c: s.c, pay: "tc", day: `Día ${s.dn} · ${CARDS[s.card].name}` })), ...DEB_SUBS];
 /* Banamex: estados de cuenta con corte 8 sep y 8 oct 2026. 3 diferimientos al 15% anual + 2 compras Amazon a MSI.
    Pago mensual (capital + interés + IVA del interés) con fecha límite ~28 de cada mes.
    28 oct: pagaste $2,236.69 (incluye Netflix, seguro de sep y una compra Amazon de $114.60). */
@@ -412,9 +471,6 @@ const SUBS_TOTAL = SUBS_TC + SUBS_DEB;
 const CRUNCHY = 28475, CRUNCHY_P = [7, 8, 9, 10];   // anualidad Crunchyroll en 4 pagos, abr–jul 2027
 /* A débito: Spotify (día 5; el de octubre ya se cobró) y Claude Pro (día 29): un cargo de cada uno por periodo desde el 28 oct. */
 const NP = 16;
-const NETFLIX_OCT = 26900;
-/* Cargos en tarjeta de octubre: incluye el seguro Banamex $192.49 (ya cancelado). El celular va a débito. */
-const SUBS_TC_OCT = 94449;
 const CEL_OCT = 36900;   // celular Movistar del 8 oct (débito, precio anterior): salió del efectivo del arranque
 
 function buildPeriods() {
@@ -534,7 +590,7 @@ function planDebt(dbt) {
 /* Suscripciones a débito como pagos con check: una por mes en su día (día 29 → 28 en febrero). No son deuda. */
 function subEvents() {
   const out = [];
-  for (const s of SUBS.filter(x => x.pay === "deb")) for (let k = 0; k < NP + 2; k++) {
+  for (const s of DEB_SUBS) for (let k = 0; k < NP + 2; k++) {
     const [y, m] = addM(2026, 10, k), d = D(y, m, Math.min(s.dn, lastDay(y, m))), n = periodOf(d);
     if (!n) continue;
     const amount = s.key === "movistar" && d === D(2026, 10, 8) ? CEL_OCT : s.c;
@@ -543,8 +599,31 @@ function subEvents() {
   return out;
 }
 
+/* Cargos de suscripciones en tarjeta → periodo en que se pagan (fecha límite de su estado, o al liquidar la tarjeta). */
+function tcSubEvents(liqMap) {
+  const out = [];
+  const place = (s, c) => {
+    let card = s.card;
+    if (liqMap[card] && c > liqMap[card]) card = "banamex";
+    if (c <= CARDS[card].lastCut) return;                         // ya viene en el último estado revisado
+    let [cut, pay] = stmtFor(card, c);
+    if (card !== "banamex" && liqMap[card] && pay > liqMap[card]) pay = liqMap[card];   // entra al liquidarla
+    const n = periodOf(pay); if (!n) return;
+    out.push({ key: s.key, name: s.name, card, charge: c, cut, date: pay, amount: s.c, period: n });
+  };
+  for (const s of TC_SUBS) for (let k = 0; k < NP + 2; k++) { const [y, m] = addM(2026, 10, k); place(s, D(y, m, Math.min(s.dn, lastDay(y, m)))); }
+  for (const s of TC_ONEOFF) place(s, s.date);
+  return out.sort((a, b) => a.date - b.date);
+}
+
 function buildPlan(aj) {
   const debts = buildDebts(aj).map(planDebt);
+  const liqMap = {}; for (const d of debts) if (d.cat === "Tarjeta" && d.key !== "banamex" && d.zeroDate) liqMap[d.key] = d.zeroDate;
+  const tcEv = tcSubEvents(liqMap);
+  for (const s of tcEv) {                                         // la suscripción viene dentro del pago de esa tarjeta
+    const d = debts.find(x => x.key === s.card), e = d && d.events.find(x => x.date === s.date);
+    if (e) { e.subsIn = (e.subsIn || 0) + s.amount; (e.subsList = e.subsList || []).push(s); s.inEvent = e.id; }
+  }
   const periods = PERIODS.map(p => ({ ...p, events: [], subEv: [] }));
   for (const e of subEvents()) periods[e.period - 1].subEv.push(e);
   for (const d of debts) for (const e of d.events) periods[e.period - 1].events.push(e);
@@ -559,8 +638,8 @@ function buildPlan(aj) {
     p.citas = p.n === 1 ? 0 : 250000;
     p.extra = dM(p.start) === 12 && dY(p.start) === 2026 ? Math.round(aj.acapulco * 100) : 0;
     p.otros = Math.round(aj.otros * 100 * (p.n === 1 ? 16 / 22 : 1));
-    const subsC = Math.round(aj.subs * 100);
-    p.subs = p.n === 1 ? 0 : p.n === 2 ? SUBS_TC_OCT - NETFLIX_OCT + subsC : subsC;   // oct (precios viejos, sin el Netflix que ya va en Banamex) + nov
+    p.tcSubs = tcEv.filter(s => s.period === p.n);
+    p.subs = p.tcSubs.reduce((s, x) => s + x.amount, 0);
     p.subEv.sort((a, b) => a.date - b.date);
     p.debito = p.subEv.reduce((s, e) => s + e.amount, 0);
     p.crunchy = CRUNCHY_P.includes(p.n) ? CRUNCHY : 0;
@@ -579,7 +658,7 @@ const money = c => (c < 0 ? "-$" : "$") + (Math.abs(c) / 100).toLocaleString("en
 const money0 = c => (c < 0 ? "-$" : "$") + Math.round(Math.abs(c) / 100).toLocaleString("en-US");
 const monthYear = n => n === Infinity || !n ? "después de ene 2028" : `${MES_L[dM(n) - 1]} ${dY(n)}`;
 
-if (typeof module !== "undefined") module.exports = { buildPlan, PERIODS, money, fmtD, monthYear, AGUINALDO, SUBS_TOTAL };
+if (typeof module !== "undefined") module.exports = { buildPlan, PERIODS, money, fmtD, monthYear, AGUINALDO, SUBS_TOTAL, CARDS };
 
 
 /* ===== App ===== */
@@ -593,7 +672,7 @@ function migrateIds(m) { const moved = []; for (const [o, n] of Object.entries(I
 const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago", sinint: "Sin intereses", debito: "Débito" };
 const PNOTE = {
   1: "<strong>Modo contención.</strong> Solo mínimos y cuotas obligatorias para seguir al corriente en Buró. Nada de salidas pagadas ni compras con tarjeta hasta el 28.",
-  2: "<strong>Mes apretado: casi no queda margen.</strong> El 4 nov paga Stori sin intereses y el 13 nov Bradescard completo, para que no te cobren 69.9% y 94.9%. Ni Plata ni Bradescard alcanzan a liquidarse este mes. El kayak sale de los $2,500 de citas (a mitades con tu novia).",
+  2: "<strong>Paga en fecha y anota lo que gastas.</strong> El 4 nov paga Stori sin intereses y el 13 nov Bradescard completo, para que no te cobren 69.9% y 94.9%. Ni Plata ni Bradescard alcanzan a liquidarse este mes. El kayak sale de los $2,500 de citas (a mitades con tu novia).",
   3: "<strong>El 28 nov liquida Plata, Bradescard y Stori TC con tu nómina.</strong> Hasta el aguinaldo (~15 dic) casi todo tu sueldo se va a pagos: no gastes de más esas dos semanas. Con el aguinaldo liquida los 4 préstamos, Klar y Nu TC; pide en cada app el monto exacto.",
   4: "<strong>Acapulco.</strong> Tu parte del viaje ya está apartada en este periodo, de contado.",
 };
@@ -603,7 +682,7 @@ const ICON_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const TODAY = toInt(new Date());
 const CUR = periodOf(TODAY) || (TODAY < PERIODS[0].start ? 1 : NP);
 const S = { aj: { ...DEFAULT_AJ }, paid: {}, steps: {}, sel: CUR, store: "none", canWrite: true, db: null, plan: null, ev: {}, dm: {},
-  tab: "hoy", filter: "todas", mas: "gastos", chartSel: CUR, statusKind: "", statusTxt: "" };
+  tab: "hoy", filter: "todas", mas: "gastos", chartSel: CUR, statusKind: "", statusTxt: "", gastos: {}, gTipo: "personal", stmtOpen: {} };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const num = (v, d, lo = 0, hi = 1e7) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
@@ -630,9 +709,9 @@ $("themeBtn").addEventListener("click", () => {
 
 /* ---------- Guardado ---------- */
 const LS = "deudacero.v1";
-function lsLoad() { try { const x = JSON.parse(lsGet(LS) || "{}"); if (x.paid) S.paid = x.paid; if (x.steps) S.steps = x.steps; if (x.aj) S.aj = sanitizeAj({ ...DEFAULT_AJ, ...x.aj });
+function lsLoad() { try { const x = JSON.parse(lsGet(LS) || "{}"); if (x.paid) S.paid = x.paid; if (x.steps) S.steps = x.steps; if (x.gastos) S.gastos = x.gastos; if (x.aj) S.aj = sanitizeAj({ ...DEFAULT_AJ, ...x.aj });
   if (migrateIds(S.paid).length || (x.aj && (OLD_SUBS.includes(Number(x.aj.subs)) || OLD_DEB.includes(Number(x.aj.debito))))) lsSave(); } catch (e) {} }
-function lsSave() { lsSet(LS, JSON.stringify({ paid: S.paid, steps: S.steps, aj: S.aj })); }
+function lsSave() { lsSet(LS, JSON.stringify({ paid: S.paid, steps: S.steps, aj: S.aj, gastos: S.gastos })); }
 function setStatus(kind, txt) { S.statusKind = kind; S.statusTxt = txt; $("dot").className = "dot " + kind; $("storeLong").textContent = txt; renderSub(); }
 async function initStore() {
   let db = null, user = null;
@@ -649,6 +728,10 @@ async function initStore() {
       Promise.resolve(raw[n] ? null : col.doc(n).set({ ...raw[o], fechaPlan: Number(n.slice(-8)) })).then(() => col.doc(o).delete()).catch(() => {}); });
     S.paid = m; render();
   }, () => setStatus("warn", "No se pudieron leer tus pagos. Recarga la página."));
+  db.collection("gastos").onSnapshot(snap => {
+    const m = {}; snap.docs.forEach(d => { const x = d.data(); if (x) m[d.id] = { fecha: Number(x.fecha) || 0, monto: Math.round(num(x.monto, 0)), tipo: x.tipo === "citas" ? "citas" : "personal", nota: String(x.nota || "").slice(0, 60), t: Number(x.t) || 0 }; });
+    S.gastos = m; render();
+  }, () => {});
   db.collection("pasos").onSnapshot(snap => { const m = {}; snap.docs.forEach(d => { if (d.exists) m[d.id] = true; }); S.steps = m; render(); }, () => {});
   db.doc("ajustes/plan").onSnapshot(s => { if (s.exists) { S.aj = sanitizeAj({ ...DEFAULT_AJ, ...s.data() }); recompute(); syncForm(); } }, () => {});
 }
@@ -663,15 +746,31 @@ async function markStep(id, on) {
 }
 async function markPaid(ev, on) {
   if (!S.canWrite || !ev) return;
-  if (on) S.paid[ev.id] = { monto: ev.amount, fecha: String(TODAY) }; else delete S.paid[ev.id];
+  if (on) S.paid[ev.id] = { monto: ev.amount + (ev.subsIn || 0), fecha: String(TODAY) }; else delete S.paid[ev.id];
   render();
   if (S.store === "db") {
     try {
       const ref = S.db.collection("pagos").doc(ev.id);
-      if (on) await ref.set({ deuda: ev.key, periodo: ev.period, fechaPlan: ev.date, monto: ev.amount, fecha: String(TODAY) });
+      if (on) await ref.set({ deuda: ev.key, periodo: ev.period, fechaPlan: ev.date, monto: ev.amount + (ev.subsIn || 0), fecha: String(TODAY) });
       else await ref.delete();
     } catch (e) { setStatus("warn", "No se guardó el último cambio. Revisa tu conexión."); }
   } else lsSave();
+}
+async function addGasto(pesos, tipo, nota) {
+  if (!S.canWrite) return false;
+  const c = Math.round(num(pesos, 0, 0, 1e6) * 100); if (!c) return false;
+  const id = "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const g = { fecha: TODAY, monto: c, tipo: tipo === "citas" ? "citas" : "personal", nota: String(nota || "").trim().slice(0, 60), t: Date.now() };
+  S.gastos[id] = g; render();
+  if (S.store === "db") { try { await S.db.collection("gastos").doc(id).set(g); } catch (e) { setStatus("warn", "No se guardó el gasto. Revisa tu conexión."); } }
+  else lsSave();
+  return true;
+}
+async function delGasto(id) {
+  if (!S.canWrite || !S.gastos[id]) return;
+  delete S.gastos[id]; render();
+  if (S.store === "db") { try { await S.db.collection("gastos").doc(id).delete(); } catch (e) { setStatus("warn", "No se borró el gasto. Revisa tu conexión."); } }
+  else lsSave();
 }
 async function editPaid(ev, pesos) {
   if (!ev) return;
@@ -694,7 +793,7 @@ function realState() {
   for (const d of P.debts) byKey[d.key] = { paid: 0, closed: false };
   for (const d of P.debts) for (const e of d.events) {
     const p = S.paid[e.id]; if (!p) continue;
-    byKey[d.key].paid += p.monto;
+    byKey[d.key].paid += e.subsIn ? Math.min(p.monto, e.amount) : p.monto;   // las suscripciones del pago no son deuda
     if (e.kind === "liquidar" || e.kind === "ultimo") byKey[d.key].closed = true;
   }
   let rem = 0, paid = 0;
@@ -707,7 +806,7 @@ function realAt(end) {
     let paid = 0, closed = false;
     for (const e of d.events) {
       const r = S.paid[e.id]; if (!r || (Number(r.fecha) || 0) > end) continue;
-      paid += r.monto; if (e.kind === "liquidar" || e.kind === "ultimo") closed = true;
+      paid += e.subsIn ? Math.min(r.monto, e.amount) : r.monto; if (e.kind === "liquidar" || e.kind === "ultimo") closed = true;
     }
     rem += closed ? 0 : Math.max(0, d.saldo - paid);
   }
@@ -730,7 +829,8 @@ function pasajes(p) {
 const nd = n => `${n} ${n === 1 ? "día" : "días"}`;
 const evIn = p => [...p.events, ...p.subEv];
 const paidIn = p => evIn(p).reduce((s, e) => s + (S.paid[e.id] ? S.paid[e.id].monto : 0), 0);
-const pendIn = p => evIn(p).filter(e => !S.paid[e.id]).reduce((s, e) => s + e.amount, 0);
+const pendIn = p => evIn(p).filter(e => !S.paid[e.id]).reduce((s, e) => s + e.amount + (e.subsIn || 0), 0);
+const subsNames = e => (e.subsList || []).map(s => s.name.replace(/ \(.*\)$/, "")).join(", ");
 /* Lo que debería haber en la cuenta hoy. Arranque: efectivo − pasajes usados − pagos hechos. Después: pasajes + pagos que faltan. */
 function cuentaHoy(p) {
   const ps = pasajes(p);
@@ -744,13 +844,14 @@ function payRow(e, pre, editable) {
   const when = e.kind === "liquidar" && e.date === AGUINALDO ? "Aguin." : fmtD(e.date);
   const tags = [`<span class="tag ${e.kind === "liquidar" ? "liq" : e.kind === "ultimo" ? "last" : e.kind === "sinint" ? "warn" : ""}">${KIND[e.kind]}</span>`];
   if (e.kind === "liquidar" && e.interest) tags.push(`<span class="tag bad">+~${money0(e.interest)} intereses</span>`);
+  if (e.subsIn) tags.push(`<span class="tag warn" title="${esc(subsNames(e))}">Incl. ${money0(e.subsIn)} suscripciones</span>`);
   if (late) tags.push('<span class="tag bad">Vencido</span>');
   if (paid) tags.push('<span class="tag ok">Pagado</span>');
   return `<div class="item ${paid ? "done" : ""}"><label class="row" for="${id}">
-      <input type="checkbox" id="${id}" data-ev="${e.id}" ${paid ? "checked" : ""} ${S.canWrite ? "" : "disabled"} aria-label="Marcar ${esc(d.name)} ${money(e.amount)} como pagado">
+      <input type="checkbox" id="${id}" data-ev="${e.id}" ${paid ? "checked" : ""} ${S.canWrite ? "" : "disabled"} aria-label="Marcar ${esc(d.name)} ${money(e.amount + (e.subsIn || 0))} como pagado">
       <span class="date mono">${when}</span>
       <span class="what"><span class="name">${esc(d.name)}</span><span class="tags">${tags.join("")}</span></span>
-      <span class="amt mono">${money(e.amount)}</span></label>
+      <span class="amt mono">${money(e.amount + (e.subsIn || 0))}</span></label>
     ${paid && editable ? `<div class="paidedit"><label for="m-${id}">Pagaste</label><input class="mono" type="number" step="0.01" min="0" id="m-${id}" data-edit="${e.id}" value="${(paid.monto / 100).toFixed(2)}" ${S.canWrite ? "" : "disabled"}></div>` : ""}
   </div>`;
 }
@@ -773,7 +874,40 @@ function render() {
   if (!S.plan) return;
   const R = realState();
   renderSub(); showTab();
-  renderHoy(R); renderPagos(); renderDeudas(R); renderAvance(); renderMas();
+  renderHoy(R); renderSpend(); renderPagos(); renderDeudas(R); renderAvance(); renderMas();
+}
+
+function renderSpend() {
+  const p = S.plan.periods[CUR - 1], el = $("spendCard");
+  if (!p || TODAY < p.start || TODAY > p.end) { el.hidden = true; return; }
+  el.hidden = false;
+  const gs = Object.entries(S.gastos).map(([id, g]) => ({ id, ...g })).filter(g => g.fecha >= p.start && g.fecha <= p.end)
+    .sort((a, b) => b.fecha - a.fecha || (b.t || 0) - (a.t || 0));
+  const pers = gs.filter(g => g.tipo !== "citas").reduce((s, g) => s + g.monto, 0);
+  const cit = gs.filter(g => g.tipo === "citas").reduce((s, g) => s + g.monto, 0);
+  const over = Math.max(0, cit - p.citas);
+  const hoyG = gs.filter(g => g.fecha === TODAY && g.tipo !== "citas").reduce((s, g) => s + g.monto, 0);
+  const disp = p.free - pers - over;                         // libre que te queda este periodo
+  const dias = daysBetween(TODAY, p.end) + 1;
+  const porDia = Math.max(0, Math.floor((disp + hoyG) / dias / 100) * 100);
+  const hoy = porDia - hoyG;
+  const rows = gs.slice(0, 6).map(g => `<div class="gi"><span class="mono muted" style="font-size:.8rem">${fmtD(g.fecha)}</span>
+      <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(g.nota || (g.tipo === "citas" ? "Cita" : "Gasto"))}${g.tipo === "citas" ? ' <span class="tag">Citas</span>' : ""}</span>
+      <span class="mono">${money(g.monto)}</span>
+      <button type="button" class="x" data-delg="${g.id}" aria-label="Borrar gasto de ${money(g.monto)}" ${S.canWrite ? "" : "disabled"}>✕</button></div>`).join("");
+  el.innerHTML = `
+    <div class="card-h"><div><span class="eyebrow" style="color:var(--accent-text)">Para gastar hoy</span>
+      <div class="big2 ${hoy < 0 ? "c-bad" : ""}">${hoy < 0 ? "−" + money0(-hoy) : money0(hoy)}</div></div>
+      <div style="text-align:right"><span class="eyebrow">Al día</span><div class="mono" style="font-weight:600">${money0(porDia)}</div></div></div>
+    <span class="s">${disp >= 0 ? `Te quedan ${money0(disp)} libres hasta el ${fmtD(p.end)} (${nd(dias)}). Lo que no gastes se suma a tu ahorro.` : `Te pasaste ${money0(-disp)} de lo libre del periodo: recorta lo que sigue.`}</span>
+    ${p.citas ? `<div class="citas-l"><span>Citas: llevas ${money0(cit)} de ${money0(p.citas)}</span><span class="${cit > p.citas ? "c-bad" : ""}">${cit > p.citas ? "Te pasaste " + money0(cit - p.citas) : "Quedan " + money0(p.citas - cit)}</span></div>` : ""}
+    <form id="spendForm" autocomplete="off">
+      <input class="mono" type="number" id="gMonto" min="0" step="0.01" inputmode="decimal" placeholder="$ monto" aria-label="Monto del gasto" ${S.canWrite ? "" : "disabled"}>
+      <input type="text" id="gNota" maxlength="60" placeholder="¿En qué? (opcional)" aria-label="En qué gastaste" ${S.canWrite ? "" : "disabled"}>
+      <div class="seg full" role="group" aria-label="Tipo de gasto"><button type="button" data-gtipo="personal" aria-pressed="${S.gTipo === "personal"}">Personal</button><button type="button" data-gtipo="citas" aria-pressed="${S.gTipo === "citas"}">Citas</button></div>
+      <button class="btn full" type="submit" ${S.canWrite ? "" : "disabled"}>Anotar gasto</button>
+    </form>
+    ${rows ? `<div class="glist">${rows}</div>${gs.length > 6 ? `<span class="s">Y ${gs.length - 6} más en este periodo · total ${money0(pers + cit)}</span>` : ""}` : '<span class="s">Anota lo que gastas fuera del plan (comida, Rappi, salidas) y el número de arriba se ajusta solo.</span>'}`;
 }
 
 function renderHoy(R) {
@@ -791,7 +925,7 @@ function renderHoy(R) {
     const late = nx.date < TODAY;
     nc.className = "card next" + (late ? " late" : "");
     nc.innerHTML = `<div style="min-width:0"><span class="eyebrow" style="color:${late ? "var(--bad)" : "var(--accent-text)"}">${late ? "Pago vencido" : "Próximo pago"}</span>
-        <div class="amt">${money(nx.amount)}</div><div class="name">${esc((S.dm[nx.key] || nx).name)} · ${KIND[nx.kind].toLowerCase()}</div>
+        <div class="amt">${money(nx.amount + (nx.subsIn || 0))}</div><div class="name">${esc((S.dm[nx.key] || nx).name)} · ${KIND[nx.kind].toLowerCase()}</div>${nx.subsIn ? `<div class="muted" style="font-size:.8rem">Incluye ${esc(subsNames(nx))}</div>` : ""}
         <div class="muted" style="font-size:.82rem">${fmtD(nx.date)} · ${days(nx.date)}</div></div>
       <button type="button" class="btn" data-pay="${nx.id}" ${S.canWrite ? "" : "disabled"}>Ya lo pagué</button>`;
   } else { nc.className = "card next"; nc.innerHTML = `<div><span class="eyebrow">Próximo pago</span><div class="amt">Nada pendiente</div></div>`; }
@@ -825,6 +959,7 @@ function renderPagos() {
       <div class="pas-l"><span>Usaste <b>${nd(ps.used)} · ${money0(ps.spent)}</b></span><span class="r">Faltan <b>${nd(ps.left)} · ${money0(ps.rest)}</b></span></div>
       <div class="pas-l"><span>Lunes a viernes, hoy incluido, hasta el ${fmtD(ps.endT)}</span></div></div>` : "";
   const ch = now ? cuentaHoy(p) : null;
+  const tcLoose = p.tcSubs.filter(s => !s.inEvent), loose = tcLoose.reduce((s, x) => s + x.amount, 0), inPay = p.subs - loose;
   const L = (cls, a, b) => `<div class="line ${cls}"><span>${a}</span><span class="mono">${b}</span></div>`;
   $("ticket").innerHTML = `
     <div class="card-h"><div><span class="eyebrow">${p.n === 1 ? "Antes de la nómina" : "Periodo de nómina"}${p.n === CUR ? " · ahora" : ""}</span><h2 style="font-size:1.3rem">${esc(p.n === 1 ? "Arranque" : p.name)}</h2><span class="muted" style="font-size:.82rem">${esc(p.range)} ${p.n === 1 ? "" : dY(p.end)}</span></div>
@@ -834,12 +969,13 @@ function renderPagos() {
     ${L("minus", `Transporte (${ps.total} días × $152)`, money(p.transporte))}
     ${pasHTML}
     ${p.citas ? L("minus", "Citas con tu novia", money(p.citas)) : ""}
-    ${p.subs ? L("minus", `Suscripciones en tarjeta<br><span class="muted" style="font-size:.8rem">Van dentro del pago de cada tarjeta${p.n === 2 ? "; oct + nov, sin el Netflix de oct que ya va en Banamex" : ""}</span>`, money(p.subs)) : ""}
+    ${loose ? L("minus", `Suscripciones en tarjeta<br><span class="muted" style="font-size:.8rem">${esc(tcLoose.map(s => s.name.replace(/ \(.*\)$/, "")).join(", "))} · van en tu pago de Banamex</span>`, money(loose)) : ""}
     ${p.crunchy ? L("minus", "Crunchyroll anual (1 de 4)", money(p.crunchy)) : ""}
     ${p.extra ? L("minus", "Tu parte de Acapulco", money(p.extra)) : ""}
     ${p.otros ? L("minus", "Otros gastos tuyos", money(p.otros)) : ""}
     <div class="perf" aria-hidden="true"></div>
-    <div class="card-h"><span class="eyebrow">Pagos de deudas (${p.events.length})</span><span class="mono muted" style="font-size:.85rem">${money(p.debt)}</span></div>
+    <div class="card-h"><span class="eyebrow">Pagos de deudas (${p.events.length})</span><span class="mono muted" style="font-size:.85rem">${money(p.debt + inPay)}</span></div>
+    ${inPay ? `<p class="muted" style="font-size:.8rem; margin:-6px 0 0">Los pagos de tarjeta ya traen sumadas tus suscripciones (${money0(inPay)}), como en el estado de cuenta.</p>` : ""}
     <div class="rows">${p.events.map(e => payRow(e, "t-", true)).join("") || '<p class="muted">Sin pagos de deudas en este periodo.</p>'}</div>
     ${p.subEv.length ? `<div class="perf" aria-hidden="true"></div>
     <div class="card-h"><span class="eyebrow">Suscripciones a débito (${p.subEv.length})</span><span class="mono muted" style="font-size:.85rem">${money(p.debito)}</span></div>
@@ -850,6 +986,42 @@ function renderPagos() {
     ${paidSum ? L("", '<span class="muted">Ya pagaste en este periodo</span>', money(paidSum)) : ""}
     ${ch ? `<div class="have"><span class="eyebrow">${ch.lbl}</span><b>${money(ch.v)}</b><span class="s">${p.n === 1 ? `${money(p.income)} − ${money0(ps.spent)} de pasajes − ${money0(paidSum)} de pagos. Si tienes menos, algo más salió.` : `${money0(ps.rest)} de pasajes + ${money0(pending)} de pagos que faltan.`}</span></div>` : ""}
     ${PNOTE[p.n] ? `<div class="note">${PNOTE[p.n]}</div>` : ""}`;
+}
+
+/* Estados de cuenta de octubre 2026: qué trae cada uno (centavos). */
+const STMT = {
+  banamex: { corte: "8 oct", limite: "28 oct", tasa: "Diferidos 15% · compras 62%", tot: ["Pago para no generar intereses", 223669],
+    items: [["Diferidos y compras a meses", 153102], ["Intereses e IVA", 12958], ["Netflix (oct)", 26900], ["Seguro Vida (sep)", 19249], ["Amazon (27 sep)", 11460]],
+    nota: "Aparte quedan $8,928.64 a meses: 3 diferidos al 15% y 2 compras de Amazon sin intereses que terminan en diciembre." },
+  nutc: { corte: "17 oct", limite: "28 oct", tasa: "Diferidos 59.9% y 79.9% · compras 99.9%", tot: ["Pago para no generar intereses", 201178],
+    items: [["Ticketmaster diferido 1/3", 66209], ["Pagos fijos de agosto 1/6", 28387], ["Pagos fijos de marzo 6/6 (último)", 36829], ["Mercado Pago 1/3 sin intereses", 36334], ["Google/Amazon ($99) y Web Tickets ($176)", 27500], ["IVA de intereses", 5922], ["Saldo a favor", -3]],
+    nota: "Aparte quedan ~$3,127 a meses: Ticketmaster 2 pagos, pagos fijos de agosto 5 y Mercado Pago 2." },
+  storitc: { corte: "12 oct", limite: "4 nov", tasa: "Compras 139.9% · a meses 69.9%", tot: ["Pago para no generar intereses", 117098],
+    items: [["Mensualidades a meses (3)", 73217], ["Spotify Duo (sep)", 18900], ["Web Tickets (7 oct)", 14000], ["Intereses e IVA", 10994], ["Saldo a favor", -13]],
+    nota: "Aparte quedan $971.13 a meses: SD AC Tecámac 3/3 y Prof Kevsdev 2/3 y 3/3." },
+  plata: { corte: "12 oct", limite: "10 nov", tasa: "99.9% anual fija · CAT 161.46%", tot: ["Deuda total", 780972],
+    items: [["Lo que arrastras del mes pasado", 601450], ["Compras y cargos", 173925], ["Meses sin intereses 2/3", 20132], ["Intereses", 58078], ["Comisiones", 7500], ["IVA", 10021], ["Tu pago (9 oct) y devolución", -90134]],
+    nota: "Compras y cargos: 2 transferencias a tu cuenta ($750), seguro ($65 y $81), Enviaflores ($586, te lo devolvieron), farmacia, Oxxo y Mercado Pago. Mínimo $850." },
+  bradescard: { corte: "20 oct", limite: "13 nov", tasa: "94.9% anual", tot: ["Total del mes (sin intereses)", 370023],
+    items: [["Lo que quedó del mes pasado", 163135], ["Mensualidades de pagos fijos (3)", 148208], ["Anualidad 1/3", 18500], ["Intereses", 32322], ["IVA", 7858]],
+    nota: "Mínimo $1,535. Aparte vienen $1,804 de pagos fijos y anualidad en nov y dic (el plan los liquida el 28 nov)." },
+  klar: { corte: "5 oct", limite: "15 oct", tasa: "33.6% anual", tot: ["Saldo total", 249226],
+    items: [["Lo que quedó del mes pasado", 213285], ["Compras de sep (Rappi, Oxxo, Uber, farmacia, Google)", 154324], ["Intereses e IVA", 9617], ["Tus pagos", -128000]],
+    nota: "Para no generar intereses eran $2,042.13. Pagaste el mínimo ($665.93) y Klar pasó el resto a 36 meses." },
+};
+function stmtHTML(x) {
+  const s = STMT[x.key], c = CARDS[x.key]; if (!s || !c) return "";
+  const futAll = x.events.filter(e => e.date >= TODAY || !S.paid[e.id]), fut = futAll.slice(0, 4);
+  const R = (a, b, sub) => `<div class="r"><span>${a}${sub ? `<small>${sub}</small>` : ""}</span><span class="mono">${b}</span></div>`;
+  return `<details class="stmt" data-stmt="${x.key}" ${S.stmtOpen[x.key] ? "open" : ""}><summary>Qué trae su estado de cuenta</summary><div class="sx">
+    <div class="tg"><span class="tag">Corte día ${c.cut}</span><span class="tag">Pagas el ${c.due}${c.dueNext ? " del mes siguiente" : ""}</span><span class="tag">${esc(s.tasa)}</span></div>
+    <span class="eyebrow">Último estado · corte ${esc(s.corte)} · límite ${esc(s.limite)}</span>
+    ${s.items.map(([n, v]) => R(esc(n), money(v))).join("")}
+    <div class="r tot"><span>${esc(s.tot[0])}</span><span class="mono">${money(s.tot[1])}</span></div>
+    <p class="muted" style="margin:0; font-size:.8rem">${esc(s.nota)}</p>
+    ${fut.length ? `<span class="eyebrow">Lo que sigue en el plan</span>` + fut.map(e => R(`${fmtD(e.date)} · ${KIND[e.kind]}${S.paid[e.id] ? " · pagado" : ""}`, money(e.amount + (e.subsIn || 0)), e.subsIn ? `Incluye ${esc(subsNames(e))} (${money0(e.subsIn)})` : (e.kind === "liquidar" ? "Pide en la app el monto exacto" : ""))).join("") : ""}
+    ${futAll.length > 4 ? `<span class="muted" style="font-size:.8rem">Y ${futAll.length - 4} pagos más; todos están en Pagos.</span>` : ""}
+  </div></details>`;
 }
 
 function renderDeudas(R) {
@@ -900,8 +1072,9 @@ function renderDeudas(R) {
         <div class="debt-top"><span class="n">${esc(x.name)}${x.cancel ? '<span class="tag liq">Cancelar</span>' : ""}</span><span class="s">${k.rem === 0 ? "Liquidada" : money(k.rem)}</span></div>
         <div class="meter" aria-hidden="true"><i style="width:${pc}%"></i></div>
         <div class="meta"><span>${esc(x.info)}</span></div>
-        <div class="meta"><span>${x.cuota ? "Pago " + money(x.cuota) + " · " : ""}${esc(x.freq)}</span><span>${esc(end)}</span></div>
-        ${x.interestTotal ? `<div class="meta"><span class="c-bad">Intereses estimados hasta liquidarla: ${money0(x.interestTotal)}</span></div>` : ""}</div>`;
+        ${(() => { const nx = x.events.find(e => !S.paid[e.id]); return `<div class="meta"><span>${nx ? `Próximo: ${money(nx.amount + (nx.subsIn || 0))} el ${fmtD(nx.date)} · ` : ""}${esc(x.freq)}</span><span>${esc(end)}</span></div>`; })()}
+        ${x.interestTotal ? `<div class="meta"><span class="c-bad">Intereses estimados hasta liquidarla: ${money0(x.interestTotal)}</span></div>` : ""}
+        ${x.cat === "Tarjeta" ? stmtHTML(x) : ""}</div>`;
     }).join("");
   }).join("");
 }
@@ -977,11 +1150,11 @@ function renderMas() {
   const row = (name, tags, amt) => `<div class="item"><div class="row" style="grid-template-columns:minmax(0,1fr) auto; cursor:default; min-height:48px"><span class="what"><span class="name">${esc(name)}</span><span class="tags">${tags}</span></span><span class="amt mono">${money(amt)}</span></div></div>`;
   $("subsList").innerHTML = SUBS.map(x => row(x.name, `<span class="tag">${x.day ? esc(x.day) : "Mensual"}</span>${x.pay === "deb" ? '<span class="tag ok">Débito</span>' : '<span class="tag warn">Tarjeta de crédito</span>'}${x.flag ? `<span class="tag bad">${esc(x.flag)}</span>` : ""}`, x.c)).join("")
     + row("Crunchyroll anual", '<span class="tag">Abr–jul 2027 · 4 pagos</span>', CRUNCHY);
-  $("subsTotal").textContent = `${money(Math.round(S.aj.subs * 100) + SUBS_DEB)} al mes`;
+  $("subsTotal").textContent = `${money(SUBS_TOTAL)} al mes`;
 }
 
 /* ---------- Ajustes ---------- */
-const FIELDS = ["subs", "otros", "acapulco"];
+const FIELDS = ["otros", "acapulco"];
 function syncForm() {
   FIELDS.forEach(f => { const el = $(f); if (document.activeElement !== el) el.value = S.aj[f]; });
   $("banamexLiquidar").checked = !!S.aj.banamexLiquidar;
@@ -998,6 +1171,26 @@ $("adjForm").addEventListener("submit", async ev => {
 $("resetBtn").addEventListener("click", () => { S.aj = { ...DEFAULT_AJ }; syncForm(); recompute(); $("saveMsg").textContent = "Valores del plan restaurados. Toca Guardar para conservarlos."; });
 
 /* ---------- Eventos ---------- */
+document.addEventListener("submit", async ev => {
+  if (ev.target.id !== "spendForm") return;
+  ev.preventDefault();
+  const m = $("gMonto"), ok = await addGasto(m.value, S.gTipo, $("gNota").value);
+  if (ok) { const f = $("gMonto"); if (f) f.focus(); } else m.focus();
+});
+document.addEventListener("toggle", ev => { const d = ev.target; if (d.matches && d.matches("details[data-stmt]")) S.stmtOpen[d.dataset.stmt] = d.open; }, true);
+/* App instalable: solo en GitHub Pages */
+(() => {
+  const gh = /github\.io$/.test(location.hostname);
+  const standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+  if (!gh) return;
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if (standalone) return;
+  $("installCard").hidden = false;
+  let deferred = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; $("installBtn").hidden = false; });
+  $("installBtn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); try { await deferred.userChoice; } catch (e) {} deferred = null; $("installBtn").hidden = true; });
+  window.addEventListener("appinstalled", () => { $("installCard").hidden = true; });
+})();
 document.addEventListener("change", ev => {
   const t = ev.target;
   if (t.matches && t.matches("input[data-ev]")) markPaid(S.ev[t.dataset.ev], t.checked);
@@ -1011,6 +1204,8 @@ document.addEventListener("click", ev => {
   const f = t.closest("[data-filter]"); if (f) { S.filter = f.dataset.filter; render(); return; }
   const m = t.closest("[data-mas]"); if (m) { S.mas = m.dataset.mas; showTab(); return; }
   const p = t.closest("[data-pay]"); if (p) { markPaid(S.ev[p.dataset.pay], true); return; }
+  const dg = t.closest("[data-delg]"); if (dg) { delGasto(dg.dataset.delg); return; }
+  const gt = t.closest("[data-gtipo]"); if (gt) { S.gTipo = gt.dataset.gtipo; document.querySelectorAll("[data-gtipo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.gtipo === S.gTipo))); return; }
   const b = t.closest("[data-bar]"); if (b) { S.chartSel = Number(b.dataset.bar); renderChart(); return; }
 });
 document.addEventListener("keydown", ev => {
