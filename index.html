@@ -315,7 +315,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
       <div class="card">
         <div class="card-h"><h2>Suscripciones y celular</h2><span class="mono muted" id="subsTotal" style="font-size:.85rem"></span></div>
         <div class="rows" id="subsList"></div>
-        <div class="note"><strong>Tu Spotify y Claude Pro van a débito; las demás, a tarjetas de crédito.</strong> Las de octubre ya se cobraron y se pagan con la nómina del 28. Después cámbialas a débito, antes de congelar las tarjetas.</div>
+        <div class="note"><strong>Tu Spotify, el celular y Claude Pro van a débito; las demás, a tarjetas de crédito.</strong> Las de octubre ya se cobraron y se pagan con la nómina del 28. Después cámbialas a débito, antes de congelar las tarjetas.</div>
         <ul class="tips">
           <li><b>Spotify:</b> pagas $80 + $189 del Duo de tus papás = $269. Revisa si un plan Familiar les sale en menos.</li>
           <li><b>Celular:</b> bajó de $369 a $209: son $1,920 al año para tu fondo.</li>
@@ -354,8 +354,8 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
         <h2>Ajustes del plan</h2>
         <form class="form" id="adjForm" novalidate>
           <label class="check" for="banamexLiquidar"><input type="checkbox" id="banamexLiquidar"><span><b>Liquidar Banamex con el aguinaldo</b><br><span class="hint">Tus diferidos cobran 15% anual: es tu deuda más barata. Liquidarla te ahorra unos $400 de intereses. Es opcional: primero arma tu colchón.</span></span></label>
-          <div class="field"><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $961 (incluye el celular de $209; el seguro Banamex ya está cancelado).</span></div>
-          <div class="field"><label for="debito">Suscripciones a débito al mes</label><input type="number" id="debito" min="0" step="1" inputmode="decimal"><span class="hint">Spotify $80 (día 5) + Claude Pro $400 (día 29; 20 dólares, varía entre $350 y $400).</span></div>
+          <div class="field"><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $752: Netflix, Google, Prime y Spotify Duo. El seguro Banamex ya está cancelado.</span></div>
+          <div class="field"><label for="debito">Suscripciones a débito al mes</label><input type="number" id="debito" min="0" step="1" inputmode="decimal"><span class="hint">Spotify $80 (día 5) + celular Movistar $209 (día 8) + Claude Pro $400 (día 29; 20 dólares, varía entre $350 y $400).</span></div>
           <div class="field"><label for="otros">Otros gastos tuyos al mes</label><input type="number" id="otros" min="0" step="1" inputmode="decimal"><span class="hint">Comida fuera, cosas personales. En 0, todo lo que sobra se ve como ahorro.</span></div>
           <div class="field"><label for="acapulco">Tu parte del viaje a Acapulco</label><input type="number" id="acapulco" min="0" step="1" inputmode="decimal"><span class="hint">Sale de la nómina del 28 de diciembre.</span></div>
           <div class="savebar"><button class="btn" type="submit" id="saveBtn">Guardar ajustes</button><button class="btn ghost" type="button" id="resetBtn">Valores del plan</button><span class="muted" id="saveMsg" role="status" style="font-size:.85rem"></span></div>
@@ -397,7 +397,7 @@ const AGUINALDO = D(2026, 12, 15);   // fecha estimada (~15 dic)
 /* Suscripciones y celular (datos tuyos, mensuales). Hoy se cobran a tarjetas de crédito. */
 const SUBS = [
   { name: "Netflix (en Banamex)", c: 26900, pay: "tc" }, { name: "Google", c: 16500, pay: "tc" },
-  { name: "Amazon Prime", c: 12900, pay: "tc" }, { name: "Plan de celular", c: 20900, pay: "tc", day: "Día 8" },
+  { name: "Amazon Prime", c: 12900, pay: "tc" }, { name: "Celular Movistar", c: 20900, pay: "deb", day: "Día 8" },
   { name: "Spotify Duo (tus papás)", c: 18900, pay: "tc" },
   { name: "Spotify (tuyo)", c: 8000, pay: "deb", day: "Día 5" },
   { name: "Claude Pro (20 USD · $350–$400)", c: 40000, pay: "deb", day: "Día 29" },
@@ -413,8 +413,9 @@ const CRUNCHY = 28475, CRUNCHY_P = [7, 8, 9, 10];   // anualidad Crunchyroll en 
 /* A débito: Spotify (día 5; el de octubre ya se cobró) y Claude Pro (día 29): un cargo de cada uno por periodo desde el 28 oct. */
 const NP = 16;
 const NETFLIX_OCT = 26900;
-/* Cargos en tarjeta de octubre, a precios de octubre: celular $369 y seguro Banamex $192.49 (ya cancelado). */
-const SUBS_TC_OCT = 131349;
+/* Cargos en tarjeta de octubre: incluye el seguro Banamex $192.49 (ya cancelado). El celular va a débito. */
+const SUBS_TC_OCT = 94449;
+const CEL_OCT = 36900;   // celular Movistar del 8 oct (débito, precio anterior): salió del efectivo del arranque
 
 function buildPeriods() {
   const ps = [];
@@ -544,7 +545,7 @@ function buildPlan(aj) {
     p.otros = Math.round(aj.otros * 100 * (p.n === 1 ? 16 / 22 : 1));
     const subsC = Math.round(aj.subs * 100);
     p.subs = p.n === 1 ? 0 : p.n === 2 ? SUBS_TC_OCT - NETFLIX_OCT + subsC : subsC;   // oct (precios viejos, sin el Netflix que ya va en Banamex) + nov
-    p.debito = p.n === 1 ? 0 : Math.round(aj.debito * 100);
+    p.debito = p.n === 1 ? CEL_OCT : Math.round(aj.debito * 100);
     p.crunchy = CRUNCHY_P.includes(p.n) ? CRUNCHY : 0;
     p.debt = p.events.reduce((s, e) => s + e.amount, 0);
     p.interest = p.events.reduce((s, e) => s + (e.interest || 0), 0);
@@ -565,8 +566,8 @@ if (typeof module !== "undefined") module.exports = { buildPlan, PERIODS, money,
 
 
 /* ===== App ===== */
-const DEFAULT_AJ = { banamexLiquidar: false, otros: 0, acapulco: 4000, subs: 961, debito: 480 };
-const OLD_SUBS = [1313.49];   // valores por defecto anteriores: si quedaron guardados, se cambian por el nuevo
+const DEFAULT_AJ = { banamexLiquidar: false, otros: 0, acapulco: 4000, subs: 752, debito: 689 };
+const OLD_SUBS = [1313.49, 961], OLD_DEB = [480];   // valores por defecto anteriores: si quedaron guardados, se cambian por el nuevo
 /* Pagos que cambiaron de fecha: la marca guardada con el id viejo pasa al nuevo */
 const ID_ALIAS = { "p2-creditea-20261028": "p2-creditea-20261030", "p2-creditea-20261114": "p2-creditea-20261115",
   "p3-creditea-20261128": "p3-creditea-20261130", "p2-nutc-20261031": "p2-nutc-20261028" };
@@ -591,7 +592,7 @@ const num = (v, d, lo = 0, hi = 1e7) => { const n = Number(v); return Number.isF
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function sanitizeAj(a) {
-  return { banamexLiquidar: !!a.banamexLiquidar, otros: num(a.otros, 0), acapulco: num(a.acapulco, 4000), subs: OLD_SUBS.includes(Number(a.subs)) ? DEFAULT_AJ.subs : num(a.subs, DEFAULT_AJ.subs), debito: num(a.debito, 480) };
+  return { banamexLiquidar: !!a.banamexLiquidar, otros: num(a.otros, 0), acapulco: num(a.acapulco, 4000), subs: OLD_SUBS.includes(Number(a.subs)) ? DEFAULT_AJ.subs : num(a.subs, DEFAULT_AJ.subs), debito: OLD_DEB.includes(Number(a.debito)) ? DEFAULT_AJ.debito : num(a.debito, DEFAULT_AJ.debito) };
 }
 
 /* ---------- Tema ---------- */
@@ -612,7 +613,7 @@ $("themeBtn").addEventListener("click", () => {
 /* ---------- Guardado ---------- */
 const LS = "deudacero.v1";
 function lsLoad() { try { const x = JSON.parse(lsGet(LS) || "{}"); if (x.paid) S.paid = x.paid; if (x.steps) S.steps = x.steps; if (x.aj) S.aj = sanitizeAj({ ...DEFAULT_AJ, ...x.aj });
-  if (migrateIds(S.paid).length || (x.aj && OLD_SUBS.includes(Number(x.aj.subs)))) lsSave(); } catch (e) {} }
+  if (migrateIds(S.paid).length || (x.aj && (OLD_SUBS.includes(Number(x.aj.subs)) || OLD_DEB.includes(Number(x.aj.debito))))) lsSave(); } catch (e) {} }
 function lsSave() { lsSet(LS, JSON.stringify({ paid: S.paid, steps: S.steps, aj: S.aj })); }
 function setStatus(kind, txt) { S.statusKind = kind; S.statusTxt = txt; $("dot").className = "dot " + kind; $("storeLong").textContent = txt; renderSub(); }
 async function initStore() {
@@ -814,7 +815,7 @@ function renderPagos() {
     ${pasHTML}
     ${p.citas ? L("minus", "Citas con tu novia", money(p.citas)) : ""}
     ${p.subs ? L("minus", p.n === 2 ? "Suscripciones en tarjeta (oct + nov, sin el Netflix de oct)" : "Suscripciones en tarjeta", money(p.subs)) : ""}
-    ${p.debito ? L("minus", "Spotify y Claude Pro (débito)", money(p.debito)) : ""}
+    ${p.debito ? L("minus", p.n === 1 ? "Celular de octubre (débito)" : "Spotify, celular y Claude Pro (débito)", money(p.debito)) : ""}
     ${p.crunchy ? L("minus", "Crunchyroll anual (1 de 4)", money(p.crunchy)) : ""}
     ${p.extra ? L("minus", "Tu parte de Acapulco", money(p.extra)) : ""}
     ${p.otros ? L("minus", "Otros gastos tuyos", money(p.otros)) : ""}
