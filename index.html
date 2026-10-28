@@ -17,9 +17,10 @@
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px)}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: app de una mano. Barra arriba, 5 pestañas abajo; el avance se lee en etapas (una por nómina) con su fecha en bloque y la deuda que queda. Colores: amarillo (acento), azul (datos e información), verde (pagado). */
+/* Dirección "Anillo": el círculo del ícono es el lenguaje de toda la app. Cada avance (deuda, etapa, día, pasajes) es un anillo que se llena.
+   Amarillo = lo pagado y lo que toca hacer; azul = plan e información; verde = meta y pagado. Barra de pestañas flotante. */
 :root{
   color-scheme:dark;
   --bg:#0C0F14; --surface:#141920; --raise:#1B212A; --line:#262E39; --line-2:#36404D;
@@ -30,11 +31,12 @@
   --bad:#FF6A5F; --bad-soft:rgba(255,106,95,.13);
   --warn:#6BA6FF; --warn-soft:rgba(107,166,255,.15);
   --bar:#4F86E0;
-  --shadow:0 1px 0 rgba(255,255,255,.035) inset, 0 10px 28px rgba(0,0,0,.32);
-  --f-display:"Archivo", "Arial Narrow", system-ui, sans-serif;
+  --shadow:0 1px 0 rgba(255,255,255,.035) inset, 0 12px 30px rgba(0,0,0,.34);
+  --track:#1C2638; --glow:#1B2A44; --glass:rgba(20,26,36,.86);
+  --f-display:"Unbounded", system-ui, sans-serif;
   --f-body:"IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
   --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --r:18px;
+  --r:24px;
 }
 :root[data-theme="light"]{
   color-scheme:light;
@@ -46,14 +48,16 @@
   --bad:#C2322A; --bad-soft:rgba(194,50,42,.09);
   --warn:#1E5FD8; --warn-soft:rgba(30,95,216,.10);
   --bar:#3D74D6;
-  --shadow:0 1px 2px rgba(16,21,28,.05), 0 8px 22px rgba(16,21,28,.06);
+  --shadow:0 1px 2px rgba(16,21,28,.05), 0 10px 26px rgba(16,21,28,.07);
+  --track:#E2E8F1; --glow:#D9E5F8; --glass:rgba(255,255,255,.9);
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; position:relative}
+body::before{content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; background:radial-gradient(120% 55% at 50% -12%, var(--glow) 0, transparent 62%)}
 button,input{font:inherit; color:inherit}
 :focus-visible{outline:3px solid var(--blue); outline-offset:2px; border-radius:8px}
-h1,h2,h3{font-family:var(--f-display); font-stretch:112%; margin:0; letter-spacing:-.01em; text-wrap:balance}
+h1,h2,h3{font-family:var(--f-display); font-weight:700; margin:0; letter-spacing:-.02em; text-wrap:balance}
 p{margin:0}
 .mono{font-family:var(--f-mono); font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
@@ -283,6 +287,78 @@ ul.tips{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:6p
 .check{display:flex; gap:10px; align-items:flex-start; cursor:pointer; grid-column:1 / -1}
 .savebar{grid-column:1 / -1; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
 footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:column; gap:6px}
+/* ---------- Anillo: componentes ---------- */
+.appbar{background:transparent; border-bottom:0; -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); background:color-mix(in srgb, var(--bg) 70%, transparent)}
+.brand b{font-family:var(--f-display); font-weight:700; font-size:1rem; letter-spacing:-.01em}
+.logo,.logo svg{border-radius:10px}
+.iconbtn{border-radius:50%; background:var(--glass)}
+.card,.stat,.debt{background:var(--glass); border-radius:var(--r)}
+.card-h h2{font-size:.98rem; font-weight:700}
+.btn{border-radius:99px; padding:12px 18px}
+.btn.sm{padding:8px 14px}
+.seg{border-radius:99px; background:var(--glass)}
+.seg button{border-radius:99px}
+.note{border-radius:20px}
+.kv div{border-radius:16px}
+input[type=checkbox]{border-radius:50%; width:26px; height:26px}
+.field input[type=number],.spend input,.paidedit input{border-radius:14px}
+.tag{border-radius:99px; padding:2px 8px}
+/* Barra de pestañas flotante */
+.tabbar{left:12px; right:12px; bottom:calc(10px + env(safe-area-inset-bottom,0px)); border:1px solid var(--line); border-radius:30px; padding:6px; background:var(--glass); box-shadow:0 14px 34px rgba(0,0,0,.38)}
+.tabbar-in{max-width:none}
+.tab{min-height:56px; border-radius:24px; gap:2px; font-size:.64rem}
+.tab svg{width:40px; height:40px; padding:9px; border-radius:50%; transition:background .15s, color .15s}
+.tab[aria-current="page"]{background:none; color:var(--ink)}
+.tab[aria-current="page"] svg{background:var(--accent); color:var(--accent-ink)}
+.panel{padding-block:16px calc(118px + env(safe-area-inset-bottom,0px))}
+/* Anillos */
+.ring-svg{display:block; flex:none}
+.ring-svg .trk{stroke:var(--track)}
+.ringbox{position:relative; flex:none; display:grid; place-items:center}
+.ringbox > .in{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; line-height:1.1}
+.ringbox > .in small{font-size:.62rem; font-weight:700; color:var(--muted); letter-spacing:.06em; text-transform:uppercase}
+.ringbox > .in b{font-family:var(--f-mono); font-size:.72rem; font-weight:600}
+/* Hoy: anillo grande */
+.hero{background:none; border:0; box-shadow:none; padding:4px 0 0; align-items:center; gap:10px}
+.hero .ringbox{width:min(76vw, 290px); aspect-ratio:1}
+.hero .ringbox svg{width:100%; height:100%}
+.hero .eyebrow{letter-spacing:.14em}
+.big{font-family:var(--f-display); font-weight:800; font-size:clamp(1.9rem, 9.6vw, 2.6rem); letter-spacing:-.035em; margin:6px 0 4px}
+.hero .pct{font-size:.86rem; color:var(--muted)}
+.hero .pct b{color:var(--accent-text); font-weight:700}
+.legend.hl{justify-content:center; font-size:.76rem}
+.legend .d{width:9px; height:9px; border-radius:50%; display:inline-block}
+.stat{flex-direction:row; align-items:center; gap:12px; padding:13px 14px}
+.stat > div{display:flex; flex-direction:column; gap:1px; min-width:0}
+.stat b{font-family:var(--f-display); font-weight:700; font-size:1.02rem; letter-spacing:-.02em}
+.stat .eyebrow{font-size:.62rem}
+.next{background:linear-gradient(135deg, var(--accent-soft), var(--accent-tint)), var(--glass); border-color:color-mix(in srgb, var(--accent) 45%, transparent)}
+.next .amt{font-family:var(--f-display); font-weight:700; font-size:1.4rem; letter-spacing:-.03em}
+.next.late{background:var(--bad-soft)}
+.spend .big2{font-family:var(--f-display); font-weight:800; font-size:2.1rem; letter-spacing:-.04em}
+.spend > .card-h{align-items:center; flex-wrap:nowrap}
+.stat{gap:10px; padding:12px}
+.stat .eyebrow{letter-spacing:.08em}
+.mission .progress-dots{display:none}
+.mission > .card-h{align-items:center; flex-wrap:nowrap}
+.line.free{font-family:var(--f-display); font-weight:700; font-size:1.05rem; letter-spacing:-.02em}
+/* Deudas con anillo */
+.debt{display:grid; grid-template-columns:56px minmax(0,1fr); gap:6px 12px; padding:14px; align-items:start}
+.debt > .ringbox{grid-row:1 / span 3}
+.debt > :not(.ringbox){grid-column:2}
+.debt-top .s{font-family:var(--f-display); font-weight:700; font-size:1rem; letter-spacing:-.02em}
+.debt .meter{display:none}
+.debt.zero{background:var(--ok-soft)}
+/* Avance: cada etapa es un anillo con su fecha */
+.stage{grid-template-columns:58px minmax(0,1fr); border-radius:20px; background:var(--glass)}
+.sdate{background:none; border:0; padding:0; min-height:58px; position:relative}
+.sdate .ringbox{width:58px; height:58px}
+.stage.now .sdate,.stage.final .sdate{background:none; border:0; color:inherit}
+.stage.now .sdate .m,.stage.final .sdate .m{color:var(--muted)}
+.sdate .d{font-family:var(--f-display); font-weight:700; font-size:1rem}
+.stop b{font-family:var(--f-display); font-weight:700; letter-spacing:-.01em}
+.sbar{display:none}
+.chart .val{font-family:var(--f-mono)}
 @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
 </style>
 </head>
@@ -309,10 +385,10 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
   <!-- HOY -->
   <section class="panel" id="tab-hoy" aria-label="Hoy">
     <div class="card hero">
-      <span class="eyebrow">Debes hoy</span>
-      <div class="big" id="debes">—</div>
-      <div class="track" aria-hidden="true"><i id="trackFill"></i></div>
-      <div class="track-l"><span id="pagadoTxt"></span><span id="pctTxt">0% liquidado</span></div>
+      <div class="ringbox" id="heroRing">
+        <div class="in"><span class="eyebrow">Debes hoy</span><div class="big" id="debes">—</div><div class="pct"><b id="pctTxt">0%</b> <span id="pagadoTxt"></span></div></div>
+      </div>
+      <div class="legend hl"><span><i class="d" style="background:var(--accent)"></i>Pagado</span><span><i class="d" style="background:var(--bar)"></i><span id="planLbl">Plan</span></span><span><i class="d" style="background:var(--ok)"></i>Meta $0</span></div>
     </div>
     <div class="card next" id="nextCard"></div>
     <div class="card spend" id="spendCard"></div>
@@ -848,6 +924,21 @@ function cuentaHoy(p) {
                    : { lbl: "Por apartar", v: ps.rest + pendIn(p), s: "pasajes + pagos que faltan" };
 }
 
+/* ---------- Anillos ---------- */
+/* segs: [{from, to (0..1), color (CSS), op}] — empieza arriba y gira a la derecha */
+function ringSVG(size, sw, segs, extra) {
+  const c = size / 2, r = (size - sw) / 2;
+  const arcs = segs.filter(s => s.to - s.from > 0.0005).map(s => {
+    const len = Math.max(1, Math.round((s.to - s.from) * 1000));
+    return `<circle cx="${c}" cy="${c}" r="${r}" fill="none" style="stroke:${s.color}" ${s.op ? `stroke-opacity="${s.op}"` : ""} stroke-width="${sw}" stroke-linecap="${s.cap || "round"}" pathLength="1000" stroke-dasharray="${len} 1000" stroke-dashoffset="${-Math.round(s.from * 1000)}" transform="rotate(-90 ${c} ${c})"/>`;
+  }).join("");
+  return `<svg class="ring-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle class="trk" cx="${c}" cy="${c}" r="${r}" fill="none" stroke-width="${sw}"/>${arcs}${extra || ""}</svg>`;
+}
+const clamp01 = x => Math.max(0, Math.min(1, x || 0));
+const miniRing = (pct, color, size = 40, sw = 5, inner = "") =>
+  `<span class="ringbox" style="width:${size}px; height:${size}px">${ringSVG(size, sw, [{ from: 0, to: clamp01(pct), color }])}${inner ? `<span class="in">${inner}</span>` : ""}</span>`;
+const checkBadge = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r + 4}" style="fill:var(--bg)"/><circle cx="${cx}" cy="${cy}" r="${r}" style="fill:var(--ok)"/><path d="M ${cx - r * .42} ${cy + r * .02} l ${r * .3} ${r * .3} l ${r * .55} ${-r * .6}" fill="none" style="stroke:var(--on-ok)" stroke-width="${r * .26}" stroke-linecap="round" stroke-linejoin="round"/>`;
+
 /* ---------- Piezas ---------- */
 function payRow(e, pre, editable) {
   const d = S.dm[e.key] || { name: e.name }, paid = S.paid[e.id], late = !paid && e.date < TODAY, id = pre + e.id;
@@ -908,7 +999,7 @@ function renderSpend() {
   el.innerHTML = `
     <div class="card-h"><div><span class="eyebrow" style="color:var(--accent-text)">Para gastar hoy</span>
       <div class="big2 ${hoy < 0 ? "c-bad" : ""}">${hoy < 0 ? "−" + money0(-hoy) : money0(hoy)}</div></div>
-      <div style="text-align:right"><span class="eyebrow">Al día</span><div class="mono" style="font-weight:600">${money0(porDia)}</div></div></div>
+      ${miniRing(porDia ? hoyG / porDia : (hoyG ? 1 : 0), hoyG > porDia ? "var(--bad)" : "var(--bar)", 62, 7, `<small>al día</small><b>${money0(porDia)}</b>`)}</div>
     <span class="s">${disp >= 0 ? `Te quedan ${money0(disp)} libres hasta el ${fmtD(p.end)} (${nd(dias)}). Lo que no gastes se suma a tu ahorro.` : `Te pasaste ${money0(-disp)} de lo libre del periodo: recorta lo que sigue.`}</span>
     ${p.citas ? `<div class="citas-l"><span>Citas: llevas ${money0(cit)} de ${money0(p.citas)}</span><span class="${cit > p.citas ? "c-bad" : ""}">${cit > p.citas ? "Te pasaste " + money0(cit - p.citas) : "Quedan " + money0(p.citas - cit)}</span></div>` : ""}
     <form id="spendForm" autocomplete="off">
@@ -922,11 +1013,16 @@ function renderSpend() {
 
 function renderHoy(R) {
   const P = S.plan;
-  $("debes").textContent = money(R.rem);
+  $("debes").textContent = money0(R.rem);
   const pct = P.total0 ? Math.min(100, Math.round((1 - R.rem / P.total0) * 1000) / 10) : 0;
-  $("trackFill").style.width = pct + "%";
-  $("pctTxt").textContent = `${pct}% liquidado`;
-  $("pagadoTxt").textContent = `Pagado ${money0(R.paid)} de ${money0(P.total0)}`;
+  const ag = P.periods.find(q => q.aguinaldo) || P.periods[2];
+  const planTo = P.total0 ? clamp01(1 - ag.remaining / P.total0) : 0;
+  $("pctTxt").textContent = `${pct}%`;
+  $("pagadoTxt").textContent = `pagado de ${money0(P.total0)}`;
+  $("planLbl").textContent = `Plan al ${fmtD(ag.end)}`;
+  const hr = $("heroRing"), inner = hr.querySelector(".in");
+  hr.innerHTML = ringSVG(300, 24, [{ from: 0, to: pct / 100, color: "var(--accent)" }, { from: Math.min(planTo, pct / 100 + .012), to: planTo, color: "var(--bar)", op: .55, cap: "butt" }], checkBadge(150, 12, 13));
+  hr.appendChild(inner);
   const all = [...P.debts.flatMap(d => d.events), ...P.periods.flatMap(p => p.subEv)].sort((a, b) => a.date - b.date || a.key.localeCompare(b.key));
   const pend = all.filter(e => !S.paid[e.id]);
   const nx = pend[0];
@@ -942,12 +1038,15 @@ function renderHoy(R) {
   const p = P.periods[CUR - 1], nxtPay = PERIODS.find(q => q.n > 1 && q.start > TODAY);
   const zc = P.zCore === Infinity ? "Fuera del plan" : fullDate(P.zCore);
   const ps = pasajes(p), ch = cuentaHoy(p);
+  const perLen = daysBetween(p.start, p.end) + 1, perGone = clamp01((daysBetween(p.start, TODAY)) / perLen);
+  const paidP = paidIn(p), pendP = pendIn(p);
+  const core = P.debts.filter(d => d.key !== "banamex" && d.cat !== "Concierto"), coreS = core.reduce((s, d) => s + d.saldo, 0), coreR = core.reduce((s, d) => s + R.byKey[d.key].rem, 0);
   $("hoyStats").innerHTML = `
-    <div class="stat"><span class="eyebrow">Siguiente nómina</span><b>${nxtPay ? (daysBetween(TODAY, nxtPay.start) === 0 ? "Hoy" : daysBetween(TODAY, nxtPay.start) === 1 ? "Mañana" : daysBetween(TODAY, nxtPay.start) + " días") : "—"}</b><span class="s">${nxtPay ? fmtD(nxtPay.start) + " · " + money0(2477700) : ""}</span></div>
-    <div class="stat"><span class="eyebrow">Te queda este periodo</span><b class="${p.free < 0 ? "c-bad" : ""}">${money0(p.free)}</b><span class="s">al ${fmtD(p.end)}</span></div>
-    <div class="stat"><span class="eyebrow">Pasajes que faltan</span><b>${money0(ps.rest)}</b><span class="s">${nd(ps.left)} · hasta ${fmtD(ps.endT)}</span></div>
-    <div class="stat"><span class="eyebrow">${ch.lbl}</span><b>${money0(ch.v)}</b><span class="s">${ch.s}</span></div>
-    <div class="stat" style="grid-column:span 2"><span class="eyebrow">Sin préstamos ni tarjetas caras</span><b>${zc}</b><span class="s">${S.aj.banamexLiquidar ? "Banamex incluido: lo liquidas con el aguinaldo" : "Banamex a plazos termina en " + monthYear(S.dm.banamex.zeroDate)}</span></div>`;
+    <div class="stat">${miniRing(perGone, "var(--bar)", 34, 4)}<div><span class="eyebrow">Nómina</span><b>${nxtPay ? (daysBetween(TODAY, nxtPay.start) === 0 ? "Hoy" : daysBetween(TODAY, nxtPay.start) === 1 ? "Mañana" : daysBetween(TODAY, nxtPay.start) + " días") : "—"}</b><span class="s">${nxtPay ? fmtD(nxtPay.start) + " · " + money0(2477700) : ""}</span></div></div>
+    <div class="stat">${miniRing(p.free > 0 ? 1 : 0, "var(--ok)", 34, 4)}<div><span class="eyebrow">Libre del mes</span><b class="${p.free < 0 ? "c-bad" : ""}">${money0(p.free)}</b><span class="s">al ${fmtD(p.end)}</span></div></div>
+    <div class="stat">${miniRing(ps.total ? ps.used / ps.total : 0, "var(--bar)", 34, 4)}<div><span class="eyebrow">Pasajes</span><b>${money0(ps.rest)}</b><span class="s">${nd(ps.left)} · hasta ${fmtD(ps.endT)}</span></div></div>
+    <div class="stat">${miniRing(paidP + pendP ? paidP / (paidP + pendP) : 1, "var(--accent)", 34, 4)}<div><span class="eyebrow">${ch.lbl}</span><b>${money0(ch.v)}</b><span class="s">${ch.s}</span></div></div>
+    <div class="stat" style="grid-column:span 2">${miniRing(coreS ? 1 - coreR / coreS : 0, "var(--ok)", 46, 6, `<b>${coreS ? Math.round((1 - coreR / coreS) * 100) : 0}%</b>`)}<div><span class="eyebrow">Sin préstamos ni tarjetas caras</span><b>${zc}</b><span class="s">${S.aj.banamexLiquidar ? "Banamex incluido: lo liquidas con el aguinaldo" : "Banamex a plazos termina en " + monthYear(S.dm.banamex.zeroDate)}</span></div></div>`;
   if (window.matchMedia("(min-width:640px)").matches) $("hoyStats").lastElementChild.style.gridColumn = "auto";
   $("upcoming").innerHTML = pend.slice(0, 5).map(e => payRow(e, "h-", false)).join("") || '<p class="muted">Todo lo del plan está pagado.</p>';
   $("seeAll").dataset.sel = CUR;
@@ -1053,7 +1152,7 @@ function renderDeudas(R) {
     ];
     const done = steps.filter(s => S.steps[s.id]).length;
     $("mission").innerHTML = `
-      <div class="card-h"><div><span class="eyebrow" style="color:var(--accent-text)">Misión</span><h2>Liquidar y cancelar Plata Card</h2></div><span class="mono muted" style="font-size:.85rem">${done}/${steps.length}</span></div>
+      <div class="card-h"><div><span class="eyebrow" style="color:var(--accent-text)">Misión</span><h2>Liquidar y cancelar Plata Card</h2></div>${miniRing(done / steps.length, "var(--accent)", 50, 6, `<b>${done}/${steps.length}</b>`)}</div>
       <div class="progress-dots" aria-hidden="true">${steps.map(s => `<i class="${S.steps[s.id] ? "on" : ""}"></i>`).join("")}</div>
       <div class="kv"><div><span>Intereses al mes hoy</span><b class="c-bad">~${money0(perMonth)}</b></div><div><span>Su mínimo</span><b>${money(d.cuota)}</b></div>
         <div><span>Tu tasa (sin IVA)</span><b>${(d.apr * 100).toFixed(1)}%</b></div><div><span>Liquidar el 28 nov</span><b>~${money0(liq ? liq.amount : 0)}</b></div></div>
@@ -1079,6 +1178,7 @@ function renderDeudas(R) {
       const lastEv = x.events[x.events.length - 1];
       const end = x.zeroDate ? (lastEv && lastEv.kind === "liquidar" ? (x.zeroDate === AGUINALDO ? "Se liquida con el aguinaldo" : "Se liquida el " + fmtD(x.zeroDate)) : "Último pago " + fmtDY(x.zeroDate)) : "Termina después del plan";
       return `<div class="debt ${k.rem === 0 ? "zero" : ""}">
+        ${miniRing(pc / 100, k.rem === 0 ? "var(--ok)" : x.cat === "Tarjeta" ? "var(--accent)" : x.cat === "Préstamo" ? "var(--bar)" : "var(--ok)", 56, 7, `<b>${pc}%</b>`)}
         <div class="debt-top"><span class="n">${esc(x.name)}${x.cancel ? '<span class="tag liq">Cancelar</span>' : ""}</span><span class="s">${k.rem === 0 ? "Liquidada" : money(k.rem)}</span></div>
         <div class="meter" aria-hidden="true"><i style="width:${pc}%"></i></div>
         <div class="meta"><span>${x.n ? (() => { const done = x.pre + x.events.filter(e => S.paid[e.id]).length; return done >= x.n ? `${x.n} de ${x.n} pagados` : `${done} de ${x.n} pagado${done === 1 ? "" : "s"} · ${x.n - done === 1 ? "falta 1" : "faltan " + (x.n - done)}`; })() : esc(x.info)}</span></div>
@@ -1099,7 +1199,7 @@ function renderAvance() {
     const ends = P.debts.filter(x => x.zeroDate && periodOf(x.zeroDate) === p.n).map(x => x.name);
     const pc = P.total0 ? Math.round((1 - p.remaining / P.total0) * 100) : 0;
     return `<div class="stage ${cls}">
-      <div class="sdate" aria-hidden="true"><span class="m">${MES[dM(p.start) - 1]}</span><span class="d">${dD(p.start)}</span></div>
+      <div class="sdate" aria-hidden="true">${miniRing(pc / 100, cls === "done" ? "var(--ok)" : cls === "now" ? "var(--accent)" : "var(--bar)", 58, 5, `<small>${MES[dM(p.start) - 1]}</small><b style="font-family:var(--f-display); font-size:1rem">${dD(p.start)}</b>`)}</div>
       <div class="sbody">
         <div class="stop"><b>${esc(p.n === 1 ? "Arranque" : p.name)}</b>${p.n === CUR ? '<span class="tag liq">Ahora</span>' : ""}${p.aguinaldo ? '<span class="tag">+ aguinaldo</span>' : ""}${p.extra ? '<span class="tag">Acapulco</span>' : ""}<span class="sright"><b>${money0(p.remaining)}</b><span>queda al ${fmtD(p.end)}</span></span></div>
         <div class="smeta"><span>Pagas <b class="mono">${money0(p.debt)}</b></span><span>Te queda <b class="mono">${money0(p.free)}</b></span></div>
@@ -1110,7 +1210,7 @@ function renderAvance() {
   }).join("");
   const zAll = P.zAll === Infinity ? null : P.zAll;
   $("stages").innerHTML = st + `<div class="stage final">
-      <div class="sdate" aria-hidden="true"><span class="m">${zAll ? MES[dM(zAll) - 1] : "—"}</span><span class="d">${zAll ? dD(zAll) : "—"}</span></div>
+      <div class="sdate" aria-hidden="true">${miniRing(1, "var(--ok)", 58, 5, `<small>${zAll ? MES[dM(zAll) - 1] : "—"}</small><b style="font-family:var(--f-display); font-size:1rem">${zAll ? dD(zAll) : "—"}</b>`)}</div>
       <div class="sbody"><div class="stop"><b>Deuda cero</b><span class="sright"><b class="c-ok">$0</b><span>100%</span></span></div><span class="muted" style="font-size:.85rem">${zAll ? fullDate(zAll) + ". " : ""}${S.aj.banamexLiquidar ? "Todo pagado, Banamex incluido." : "El último pago es Banamex; antes de eso ya no debes nada caro."}</span></div></div>`;
   // viajes
   const p1 = P.periods[0], p2 = P.periods[1], p4 = P.periods[3];

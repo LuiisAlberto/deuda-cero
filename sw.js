@@ -1,5 +1,5 @@
 /* Deuda Cero: la página se pide primero a internet (para que siempre veas la última versión) y, sin conexión, sale de la copia guardada. */
-const CACHE = "deuda-cero-v3";
+const CACHE = "deuda-cero-v4";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
