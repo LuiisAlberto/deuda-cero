@@ -318,9 +318,8 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
         <div class="note"><strong>Tu Spotify y Claude Pro van a débito; las demás, a tarjetas de crédito.</strong> Las de octubre ya se cobraron y se pagan con la nómina del 28. Después cámbialas a débito, antes de congelar las tarjetas.</div>
         <ul class="tips">
           <li><b>Spotify:</b> pagas $80 + $189 del Duo de tus papás = $269. Revisa si un plan Familiar les sale en menos.</li>
-          <li><b>Celular:</b> cada $100 que le bajes son $1,200 al año para tu fondo.</li>
+          <li><b>Celular:</b> bajó de $369 a $209: son $1,920 al año para tu fondo.</li>
           <li><b>Streaming:</b> Netflix, Prime, Google y Crunchyroll a la vez. Pausar uno o dos mientras dura el plan es dinero directo al fondo.</li>
-          <li><b>Seguro Banamex Vida ($192.49):</b> revisa si lo necesitas; si no, pide cancelarlo.</li>
         </ul>
       </div>
       <div class="card">
@@ -343,7 +342,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
         <ol class="rules">
           <li><strong>Cero compras nuevas con tarjeta.</strong>Primero pasa tus suscripciones a débito; luego, cada vez que liquides una tarjeta, congélala en la app.</li>
           <li><strong>Paga siempre en fecha, aunque sea el mínimo.</strong>Así sigues al corriente en Buró y no te cobran comisión por atraso. Solo en Banamex pagaste $487 de comisiones en el último año.</li>
-          <li><strong>En Banamex paga el "pago para no generar intereses".</strong>Ya incluye tus diferidos, Netflix y el seguro. Lo que quede sin pagar cobra 62% anual.</li>
+          <li><strong>En Banamex paga el "pago para no generar intereses".</strong>Ya incluye tus diferidos y Netflix. Lo que quede sin pagar cobra 62% anual.</li>
           <li><strong>Antes de liquidar, pide el monto exacto en la app.</strong>Las tarjetas suman intereses en cada corte; en los préstamos, liquidar antes suele salir más barato que la suma de cuotas.</li>
           <li><strong>Lo que sobra es tu fondo, no gasto extra.</strong>Es lo que evita que vuelvas a usar la tarjeta en una emergencia. Meta: un mes de sueldo.</li>
           <li><strong>En la mañana, combi en vez de taxi.</strong>$12 contra $35: ahorras $23 al día (≈ $506 al mes). De noche, siempre taxi.</li>
@@ -355,7 +354,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
         <h2>Ajustes del plan</h2>
         <form class="form" id="adjForm" novalidate>
           <label class="check" for="banamexLiquidar"><input type="checkbox" id="banamexLiquidar"><span><b>Liquidar Banamex con el aguinaldo</b><br><span class="hint">Tus diferidos cobran 15% anual: es tu deuda más barata. Liquidarla te ahorra unos $400 de intereses. Es opcional: primero arma tu colchón.</span></span></label>
-          <div class="field"><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $1,313.49 (incluye celular y seguro de Banamex).</span></div>
+          <div class="field"><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $961 (incluye el celular de $209; el seguro Banamex ya está cancelado).</span></div>
           <div class="field"><label for="debito">Suscripciones a débito al mes</label><input type="number" id="debito" min="0" step="1" inputmode="decimal"><span class="hint">Spotify $80 (día 5) + Claude Pro $400 (día 29; 20 dólares, varía entre $350 y $400).</span></div>
           <div class="field"><label for="otros">Otros gastos tuyos al mes</label><input type="number" id="otros" min="0" step="1" inputmode="decimal"><span class="hint">Comida fuera, cosas personales. En 0, todo lo que sobra se ve como ahorro.</span></div>
           <div class="field"><label for="acapulco">Tu parte del viaje a Acapulco</label><input type="number" id="acapulco" min="0" step="1" inputmode="decimal"><span class="hint">Sale de la nómina del 28 de diciembre.</span></div>
@@ -398,9 +397,8 @@ const AGUINALDO = D(2026, 12, 15);   // fecha estimada (~15 dic)
 /* Suscripciones y celular (datos tuyos, mensuales). Hoy se cobran a tarjetas de crédito. */
 const SUBS = [
   { name: "Netflix (en Banamex)", c: 26900, pay: "tc" }, { name: "Google", c: 16500, pay: "tc" },
-  { name: "Amazon Prime", c: 12900, pay: "tc" }, { name: "Plan de celular", c: 36900, pay: "tc" },
+  { name: "Amazon Prime", c: 12900, pay: "tc" }, { name: "Plan de celular", c: 20900, pay: "tc", day: "Día 8" },
   { name: "Spotify Duo (tus papás)", c: 18900, pay: "tc" },
-  { name: "Seguro Banamex Vida", c: 19249, pay: "tc", flag: "¿Lo necesitas?" },
   { name: "Spotify (tuyo)", c: 8000, pay: "deb", day: "Día 5" },
   { name: "Claude Pro (20 USD · $350–$400)", c: 40000, pay: "deb", day: "Día 29" },
 ];
@@ -415,6 +413,8 @@ const CRUNCHY = 28475, CRUNCHY_P = [7, 8, 9, 10];   // anualidad Crunchyroll en 
 /* A débito: Spotify (día 5; el de octubre ya se cobró) y Claude Pro (día 29): un cargo de cada uno por periodo desde el 28 oct. */
 const NP = 16;
 const NETFLIX_OCT = 26900;
+/* Cargos en tarjeta de octubre, a precios de octubre: celular $369 y seguro Banamex $192.49 (ya cancelado). */
+const SUBS_TC_OCT = 131349;
 
 function buildPeriods() {
   const ps = [];
@@ -468,8 +468,8 @@ function buildDebts(aj) {
     { key: "storipres", cat: "Préstamo", name: "Stori Préstamo", cuota: 90631, saldo: 1178203, freq: "Quincenal · 15 y 30",
       sched: quincenalDates(D(2026, 10, 15), [15, 30], 13).map(d => [d, 90631]), kind: "cuota", liq: L(AGUINALDO),
       info: "Pago 5 de 18 · faltan 13" },
-    { key: "creditea", cat: "Préstamo", name: "Creditea", cuota: 48691, saldo: 632983, freq: "Quincenal · 14 y 28",
-      sched: quincenalDates(D(2026, 10, 14), [14, 28], 13).map(d => [d, 48691]), kind: "cuota", liq: L(AGUINALDO),
+    { key: "creditea", cat: "Préstamo", name: "Creditea", cuota: 48691, saldo: 632983, freq: "Quincenal · 15 y 30 (puede moverse un día)",
+      sched: [[D(2026, 10, 14), 48691], ...quincenalDates(D(2026, 10, 30), [15, 30], 12).map(d => [d, 48691])], kind: "cuota", liq: L(AGUINALDO),
       info: "11 de 24 pagados · faltan 13" },
     /* Tarjetas: estados de cuenta de octubre 2026. saldo = deuda al corte + lo que pagaste antes del corte. */
     { key: "plata", cat: "Tarjeta", name: "Plata Card", cuota: 85000, saldo: 812486, freq: "Corte día 12 · paga el 10",
@@ -543,7 +543,7 @@ function buildPlan(aj) {
     p.extra = dM(p.start) === 12 && dY(p.start) === 2026 ? Math.round(aj.acapulco * 100) : 0;
     p.otros = Math.round(aj.otros * 100 * (p.n === 1 ? 16 / 22 : 1));
     const subsC = Math.round(aj.subs * 100);
-    p.subs = p.n === 1 ? 0 : p.n === 2 ? 2 * subsC - NETFLIX_OCT : subsC;   // oct + nov; el Netflix de oct ya va en el pago Banamex del 28 oct
+    p.subs = p.n === 1 ? 0 : p.n === 2 ? SUBS_TC_OCT - NETFLIX_OCT + subsC : subsC;   // oct (precios viejos, sin el Netflix que ya va en Banamex) + nov
     p.debito = p.n === 1 ? 0 : Math.round(aj.debito * 100);
     p.crunchy = CRUNCHY_P.includes(p.n) ? CRUNCHY : 0;
     p.debt = p.events.reduce((s, e) => s + e.amount, 0);
@@ -565,7 +565,12 @@ if (typeof module !== "undefined") module.exports = { buildPlan, PERIODS, money,
 
 
 /* ===== App ===== */
-const DEFAULT_AJ = { banamexLiquidar: false, otros: 0, acapulco: 4000, subs: 1313.49, debito: 480 };
+const DEFAULT_AJ = { banamexLiquidar: false, otros: 0, acapulco: 4000, subs: 961, debito: 480 };
+const OLD_SUBS = [1313.49];   // valores por defecto anteriores: si quedaron guardados, se cambian por el nuevo
+/* Pagos que cambiaron de fecha: la marca guardada con el id viejo pasa al nuevo */
+const ID_ALIAS = { "p2-creditea-20261028": "p2-creditea-20261030", "p2-creditea-20261114": "p2-creditea-20261115",
+  "p3-creditea-20261128": "p3-creditea-20261130", "p2-nutc-20261031": "p2-nutc-20261028" };
+function migrateIds(m) { const moved = []; for (const [o, n] of Object.entries(ID_ALIAS)) if (m[o]) { if (!m[n]) m[n] = m[o]; delete m[o]; moved.push([o, n]); } return moved; }
 const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago", sinint: "Sin intereses" };
 const PNOTE = {
   1: "<strong>Modo contención.</strong> Solo mínimos y cuotas obligatorias para seguir al corriente en Buró. Nada de salidas pagadas ni compras con tarjeta hasta el 28.",
@@ -586,7 +591,7 @@ const num = (v, d, lo = 0, hi = 1e7) => { const n = Number(v); return Number.isF
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function sanitizeAj(a) {
-  return { banamexLiquidar: !!a.banamexLiquidar, otros: num(a.otros, 0), acapulco: num(a.acapulco, 4000), subs: num(a.subs, 1313.49), debito: num(a.debito, 480) };
+  return { banamexLiquidar: !!a.banamexLiquidar, otros: num(a.otros, 0), acapulco: num(a.acapulco, 4000), subs: OLD_SUBS.includes(Number(a.subs)) ? DEFAULT_AJ.subs : num(a.subs, DEFAULT_AJ.subs), debito: num(a.debito, 480) };
 }
 
 /* ---------- Tema ---------- */
@@ -606,7 +611,8 @@ $("themeBtn").addEventListener("click", () => {
 
 /* ---------- Guardado ---------- */
 const LS = "deudacero.v1";
-function lsLoad() { try { const x = JSON.parse(lsGet(LS) || "{}"); if (x.paid) S.paid = x.paid; if (x.steps) S.steps = x.steps; if (x.aj) S.aj = sanitizeAj({ ...DEFAULT_AJ, ...x.aj }); } catch (e) {} }
+function lsLoad() { try { const x = JSON.parse(lsGet(LS) || "{}"); if (x.paid) S.paid = x.paid; if (x.steps) S.steps = x.steps; if (x.aj) S.aj = sanitizeAj({ ...DEFAULT_AJ, ...x.aj });
+  if (migrateIds(S.paid).length || (x.aj && OLD_SUBS.includes(Number(x.aj.subs)))) lsSave(); } catch (e) {} }
 function lsSave() { lsSet(LS, JSON.stringify({ paid: S.paid, steps: S.steps, aj: S.aj })); }
 function setStatus(kind, txt) { S.statusKind = kind; S.statusTxt = txt; $("dot").className = "dot " + kind; $("storeLong").textContent = txt; renderSub(); }
 async function initStore() {
@@ -617,8 +623,11 @@ async function initStore() {
   if (user) { try { if ((await user.isOwner()) === false) S.canWrite = false; } catch (e) {} }
   setStatus(S.canWrite ? "on" : "warn", S.canWrite ? "Tus pagos se guardan en tu cuenta." : "Solo lectura: esta página es de Luis.");
   db.collection("pagos").onSnapshot(snap => {
-    const m = {};
-    snap.docs.forEach(d => { const x = d.data(); if (x) m[d.id] = { monto: Math.round(num(x.monto, 0)), fecha: String(x.fecha || "") }; });
+    const m = {}, raw = {};
+    snap.docs.forEach(d => { const x = d.data(); if (x) { raw[d.id] = x; m[d.id] = { monto: Math.round(num(x.monto, 0)), fecha: String(x.fecha || "") }; } });
+    const moved = migrateIds(m);
+    if (moved.length && S.canWrite) moved.forEach(([o, n]) => { const col = db.collection("pagos");
+      Promise.resolve(raw[n] ? null : col.doc(n).set({ ...raw[o], fechaPlan: Number(n.slice(-8)) })).then(() => col.doc(o).delete()).catch(() => {}); });
     S.paid = m; render();
   }, () => setStatus("warn", "No se pudieron leer tus pagos. Recarga la página."));
   db.collection("pasos").onSnapshot(snap => { const m = {}; snap.docs.forEach(d => { if (d.exists) m[d.id] = true; }); S.steps = m; render(); }, () => {});
