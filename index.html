@@ -315,7 +315,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
       <div class="card">
         <div class="card-h"><h2>Suscripciones y celular</h2><span class="mono muted" id="subsTotal" style="font-size:.85rem"></span></div>
         <div class="rows" id="subsList"></div>
-        <div class="note"><strong>Tu Spotify, el celular y Claude Pro van a débito; las demás, a tarjetas de crédito.</strong> Las de octubre ya se cobraron y se pagan con la nómina del 28. Después cámbialas a débito, antes de congelar las tarjetas.</div>
+        <div class="note"><strong>Spotify, Movistar y Claude Pro van a débito: márcalos en Pagos.</strong> Las demás llegan en el estado de cuenta de cada tarjeta y se pagan dentro de su pago del mes. El plan las suma aparte porque los montos de tarjeta que tiene no las incluyen. Cuando liquides Klar, Nu y Stori, pasa las que tengas ahí a Banamex: pagando su total cada mes no cobra intereses y te da un mes para pagarlas.</div>
         <ul class="tips">
           <li><b>Spotify:</b> pagas $80 + $189 del Duo de tus papás = $269. Revisa si un plan Familiar les sale en menos.</li>
           <li><b>Celular:</b> bajó de $369 a $209: son $1,920 al año para tu fondo.</li>
@@ -340,7 +340,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
       <div class="card">
         <h2>Reglas para no volver a caer</h2>
         <ol class="rules">
-          <li><strong>Cero compras nuevas con tarjeta.</strong>Primero pasa tus suscripciones a débito; luego, cada vez que liquides una tarjeta, congélala en la app.</li>
+          <li><strong>Cero compras nuevas con tarjeta.</strong>Antes de congelar cada tarjeta que liquides, pasa sus suscripciones a Banamex.</li>
           <li><strong>Paga siempre en fecha, aunque sea el mínimo.</strong>Así sigues al corriente en Buró y no te cobran comisión por atraso. Solo en Banamex pagaste $487 de comisiones en el último año.</li>
           <li><strong>En Banamex paga el "pago para no generar intereses".</strong>Ya incluye tus diferidos y Netflix. Lo que quede sin pagar cobra 62% anual.</li>
           <li><strong>Antes de liquidar, pide el monto exacto en la app.</strong>Las tarjetas suman intereses en cada corte; en los préstamos, liquidar antes suele salir más barato que la suma de cuotas.</li>
@@ -355,7 +355,7 @@ footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:c
         <form class="form" id="adjForm" novalidate>
           <label class="check" for="banamexLiquidar"><input type="checkbox" id="banamexLiquidar"><span><b>Liquidar Banamex con el aguinaldo</b><br><span class="hint">Tus diferidos cobran 15% anual: es tu deuda más barata. Liquidarla te ahorra unos $400 de intereses. Es opcional: primero arma tu colchón.</span></span></label>
           <div class="field"><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $752: Netflix, Google, Prime y Spotify Duo. El seguro Banamex ya está cancelado.</span></div>
-          <div class="field"><label for="debito">Suscripciones a débito al mes</label><input type="number" id="debito" min="0" step="1" inputmode="decimal"><span class="hint">Spotify $80 (día 5) + celular Movistar $209 (día 8) + Claude Pro $400 (día 29; 20 dólares, varía entre $350 y $400).</span></div>
+          <div class="field" hidden><label for="debito">Suscripciones a débito al mes</label><input type="number" id="debito" min="0" step="1" inputmode="decimal"><span class="hint">Spotify $80 (día 5) + celular Movistar $209 (día 8) + Claude Pro $400 (día 29; 20 dólares, varía entre $350 y $400).</span></div>
           <div class="field"><label for="otros">Otros gastos tuyos al mes</label><input type="number" id="otros" min="0" step="1" inputmode="decimal"><span class="hint">Comida fuera, cosas personales. En 0, todo lo que sobra se ve como ahorro.</span></div>
           <div class="field"><label for="acapulco">Tu parte del viaje a Acapulco</label><input type="number" id="acapulco" min="0" step="1" inputmode="decimal"><span class="hint">Sale de la nómina del 28 de diciembre.</span></div>
           <div class="savebar"><button class="btn" type="submit" id="saveBtn">Guardar ajustes</button><button class="btn ghost" type="button" id="resetBtn">Valores del plan</button><span class="muted" id="saveMsg" role="status" style="font-size:.85rem"></span></div>
@@ -397,10 +397,10 @@ const AGUINALDO = D(2026, 12, 15);   // fecha estimada (~15 dic)
 /* Suscripciones y celular (datos tuyos, mensuales). Hoy se cobran a tarjetas de crédito. */
 const SUBS = [
   { name: "Netflix (en Banamex)", c: 26900, pay: "tc" }, { name: "Google", c: 16500, pay: "tc" },
-  { name: "Amazon Prime", c: 12900, pay: "tc" }, { name: "Celular Movistar", c: 20900, pay: "deb", day: "Día 8" },
+  { name: "Amazon Prime", c: 12900, pay: "tc" }, { name: "Celular Movistar", c: 20900, pay: "deb", day: "Día 8", dn: 8, key: "movistar", short: "Movistar" },
   { name: "Spotify Duo (tus papás)", c: 18900, pay: "tc" },
-  { name: "Spotify (tuyo)", c: 8000, pay: "deb", day: "Día 5" },
-  { name: "Claude Pro (20 USD · $350–$400)", c: 40000, pay: "deb", day: "Día 29" },
+  { name: "Spotify (tuyo)", c: 8000, pay: "deb", day: "Día 5", dn: 5, key: "spotify", short: "Spotify" },
+  { name: "Claude Pro (20 USD · $350–$400)", c: 40000, pay: "deb", day: "Día 29", dn: 29, key: "claude", short: "Claude Pro" },
 ];
 /* Banamex: estados de cuenta con corte 8 sep y 8 oct 2026. 3 diferimientos al 15% anual + 2 compras Amazon a MSI.
    Pago mensual (capital + interés + IVA del interés) con fecha límite ~28 de cada mes.
@@ -528,9 +528,22 @@ function planDebt(dbt) {
   return dbt;
 }
 
+/* Suscripciones a débito como pagos con check: una por mes en su día (día 29 → 28 en febrero). No son deuda. */
+function subEvents() {
+  const out = [];
+  for (const s of SUBS.filter(x => x.pay === "deb")) for (let k = 0; k < NP + 2; k++) {
+    const [y, m] = addM(2026, 10, k), d = D(y, m, Math.min(s.dn, lastDay(y, m))), n = periodOf(d);
+    if (!n) continue;
+    const amount = s.key === "movistar" && d === D(2026, 10, 8) ? CEL_OCT : s.c;
+    out.push({ key: "sub-" + s.key, name: s.short, date: d, amount, kind: "debito", period: n, id: `p${n}-sub-${s.key}-${d}`, sub: true });
+  }
+  return out;
+}
+
 function buildPlan(aj) {
   const debts = buildDebts(aj).map(planDebt);
-  const periods = PERIODS.map(p => ({ ...p, events: [] }));
+  const periods = PERIODS.map(p => ({ ...p, events: [], subEv: [] }));
+  for (const e of subEvents()) periods[e.period - 1].subEv.push(e);
   for (const d of debts) for (const e of d.events) periods[e.period - 1].events.push(e);
   let carry = 0;
   const total0 = debts.reduce((s, d) => s + d.saldo, 0);
@@ -545,7 +558,8 @@ function buildPlan(aj) {
     p.otros = Math.round(aj.otros * 100 * (p.n === 1 ? 16 / 22 : 1));
     const subsC = Math.round(aj.subs * 100);
     p.subs = p.n === 1 ? 0 : p.n === 2 ? SUBS_TC_OCT - NETFLIX_OCT + subsC : subsC;   // oct (precios viejos, sin el Netflix que ya va en Banamex) + nov
-    p.debito = p.n === 1 ? CEL_OCT : Math.round(aj.debito * 100);
+    p.subEv.sort((a, b) => a.date - b.date);
+    p.debito = p.subEv.reduce((s, e) => s + e.amount, 0);
     p.crunchy = CRUNCHY_P.includes(p.n) ? CRUNCHY : 0;
     p.debt = p.events.reduce((s, e) => s + e.amount, 0);
     p.interest = p.events.reduce((s, e) => s + (e.interest || 0), 0);
@@ -572,7 +586,7 @@ const OLD_SUBS = [1313.49, 961], OLD_DEB = [480];   // valores por defecto anter
 const ID_ALIAS = { "p2-creditea-20261028": "p2-creditea-20261030", "p2-creditea-20261114": "p2-creditea-20261115",
   "p3-creditea-20261128": "p3-creditea-20261130", "p2-nutc-20261031": "p2-nutc-20261028" };
 function migrateIds(m) { const moved = []; for (const [o, n] of Object.entries(ID_ALIAS)) if (m[o]) { if (!m[n]) m[n] = m[o]; delete m[o]; moved.push([o, n]); } return moved; }
-const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago", sinint: "Sin intereses" };
+const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago", sinint: "Sin intereses", debito: "Débito" };
 const PNOTE = {
   1: "<strong>Modo contención.</strong> Solo mínimos y cuotas obligatorias para seguir al corriente en Buró. Nada de salidas pagadas ni compras con tarjeta hasta el 28.",
   2: "<strong>Mes apretado: casi no queda margen.</strong> El 4 nov paga Stori sin intereses y el 13 nov Bradescard completo, para que no te cobren 69.9% y 94.9%. Ni Plata ni Bradescard alcanzan a liquidarse este mes. El kayak sale de los $2,500 de citas (a mitades con tu novia).",
@@ -668,6 +682,7 @@ async function editPaid(ev, pesos) {
 function recompute() {
   S.plan = buildPlan(S.aj); S.ev = {}; S.dm = {};
   for (const d of S.plan.debts) { S.dm[d.key] = d; for (const e of d.events) S.ev[e.id] = e; }
+  for (const p of S.plan.periods) for (const e of p.subEv) S.ev[e.id] = e;
   render();
 }
 function realState() {
@@ -709,8 +724,9 @@ function pasajes(p) {
   return { total, left, used: total - left, rest: left * T_DIA, spent: (total - left) * T_DIA, endT, today: p.n === CUR && isWork(TODAY) && left > 0 };
 }
 const nd = n => `${n} ${n === 1 ? "día" : "días"}`;
-const paidIn = p => p.events.reduce((s, e) => s + (S.paid[e.id] ? S.paid[e.id].monto : 0), 0);
-const pendIn = p => p.events.filter(e => !S.paid[e.id]).reduce((s, e) => s + e.amount, 0);
+const evIn = p => [...p.events, ...p.subEv];
+const paidIn = p => evIn(p).reduce((s, e) => s + (S.paid[e.id] ? S.paid[e.id].monto : 0), 0);
+const pendIn = p => evIn(p).filter(e => !S.paid[e.id]).reduce((s, e) => s + e.amount, 0);
 /* Lo que debería haber en la cuenta hoy. Arranque: efectivo − pasajes usados − pagos hechos. Después: pasajes + pagos que faltan. */
 function cuentaHoy(p) {
   const ps = pasajes(p);
@@ -720,7 +736,7 @@ function cuentaHoy(p) {
 
 /* ---------- Piezas ---------- */
 function payRow(e, pre, editable) {
-  const d = S.dm[e.key], paid = S.paid[e.id], late = !paid && e.date < TODAY, id = pre + e.id;
+  const d = S.dm[e.key] || { name: e.name }, paid = S.paid[e.id], late = !paid && e.date < TODAY, id = pre + e.id;
   const when = e.kind === "liquidar" && e.date === AGUINALDO ? "Aguin." : fmtD(e.date);
   const tags = [`<span class="tag ${e.kind === "liquidar" ? "liq" : e.kind === "ultimo" ? "last" : e.kind === "sinint" ? "warn" : ""}">${KIND[e.kind]}</span>`];
   if (e.kind === "liquidar" && e.interest) tags.push(`<span class="tag bad">+~${money0(e.interest)} intereses</span>`);
@@ -763,7 +779,7 @@ function renderHoy(R) {
   $("trackFill").style.width = pct + "%";
   $("pctTxt").textContent = `${pct}% liquidado`;
   $("pagadoTxt").textContent = `Pagado ${money0(R.paid)} de ${money0(P.total0)}`;
-  const all = P.debts.flatMap(d => d.events).sort((a, b) => a.date - b.date || a.key.localeCompare(b.key));
+  const all = [...P.debts.flatMap(d => d.events), ...P.periods.flatMap(p => p.subEv)].sort((a, b) => a.date - b.date || a.key.localeCompare(b.key));
   const pend = all.filter(e => !S.paid[e.id]);
   const nx = pend[0];
   const nc = $("nextCard");
@@ -771,7 +787,7 @@ function renderHoy(R) {
     const late = nx.date < TODAY;
     nc.className = "card next" + (late ? " late" : "");
     nc.innerHTML = `<div style="min-width:0"><span class="eyebrow" style="color:${late ? "var(--bad)" : "var(--accent-text)"}">${late ? "Pago vencido" : "Próximo pago"}</span>
-        <div class="amt">${money(nx.amount)}</div><div class="name">${esc(S.dm[nx.key].name)} · ${KIND[nx.kind].toLowerCase()}</div>
+        <div class="amt">${money(nx.amount)}</div><div class="name">${esc((S.dm[nx.key] || nx).name)} · ${KIND[nx.kind].toLowerCase()}</div>
         <div class="muted" style="font-size:.82rem">${fmtD(nx.date)} · ${days(nx.date)}</div></div>
       <button type="button" class="btn" data-pay="${nx.id}" ${S.canWrite ? "" : "disabled"}>Ya lo pagué</button>`;
   } else { nc.className = "card next"; nc.innerHTML = `<div><span class="eyebrow">Próximo pago</span><div class="amt">Nada pendiente</div></div>`; }
@@ -814,14 +830,16 @@ function renderPagos() {
     ${L("minus", `Transporte (${ps.total} días × $152)`, money(p.transporte))}
     ${pasHTML}
     ${p.citas ? L("minus", "Citas con tu novia", money(p.citas)) : ""}
-    ${p.subs ? L("minus", p.n === 2 ? "Suscripciones en tarjeta (oct + nov, sin el Netflix de oct)" : "Suscripciones en tarjeta", money(p.subs)) : ""}
-    ${p.debito ? L("minus", p.n === 1 ? "Celular de octubre (débito)" : "Spotify, celular y Claude Pro (débito)", money(p.debito)) : ""}
+    ${p.subs ? L("minus", `Suscripciones en tarjeta<br><span class="muted" style="font-size:.8rem">Van dentro del pago de cada tarjeta${p.n === 2 ? "; oct + nov, sin el Netflix de oct que ya va en Banamex" : ""}</span>`, money(p.subs)) : ""}
     ${p.crunchy ? L("minus", "Crunchyroll anual (1 de 4)", money(p.crunchy)) : ""}
     ${p.extra ? L("minus", "Tu parte de Acapulco", money(p.extra)) : ""}
     ${p.otros ? L("minus", "Otros gastos tuyos", money(p.otros)) : ""}
     <div class="perf" aria-hidden="true"></div>
     <div class="card-h"><span class="eyebrow">Pagos de deudas (${p.events.length})</span><span class="mono muted" style="font-size:.85rem">${money(p.debt)}</span></div>
     <div class="rows">${p.events.map(e => payRow(e, "t-", true)).join("") || '<p class="muted">Sin pagos de deudas en este periodo.</p>'}</div>
+    ${p.subEv.length ? `<div class="perf" aria-hidden="true"></div>
+    <div class="card-h"><span class="eyebrow">Suscripciones a débito (${p.subEv.length})</span><span class="mono muted" style="font-size:.85rem">${money(p.debito)}</span></div>
+    <div class="rows">${p.subEv.map(e => payRow(e, "t-", true)).join("")}</div>` : ""}
     <div class="perf" aria-hidden="true"></div>
     <div class="line free ${p.free < 0 ? "neg" : ""}"><span>Te queda libre</span><span class="mono">${money(p.free)}</span></div>
     ${L("", '<span class="muted">Ahorro acumulado al cierre</span>', `<span style="color:${p.cum < 0 ? "var(--bad)" : "var(--ok)"}">${money(p.cum)}</span>`)}
@@ -955,11 +973,11 @@ function renderMas() {
   const row = (name, tags, amt) => `<div class="item"><div class="row" style="grid-template-columns:minmax(0,1fr) auto; cursor:default; min-height:48px"><span class="what"><span class="name">${esc(name)}</span><span class="tags">${tags}</span></span><span class="amt mono">${money(amt)}</span></div></div>`;
   $("subsList").innerHTML = SUBS.map(x => row(x.name, `<span class="tag">${x.day ? esc(x.day) : "Mensual"}</span>${x.pay === "deb" ? '<span class="tag ok">Débito</span>' : '<span class="tag warn">Tarjeta de crédito</span>'}${x.flag ? `<span class="tag bad">${esc(x.flag)}</span>` : ""}`, x.c)).join("")
     + row("Crunchyroll anual", '<span class="tag">Abr–jul 2027 · 4 pagos</span>', CRUNCHY);
-  $("subsTotal").textContent = `${money(Math.round((S.aj.subs + S.aj.debito) * 100))} al mes`;
+  $("subsTotal").textContent = `${money(Math.round(S.aj.subs * 100) + SUBS_DEB)} al mes`;
 }
 
 /* ---------- Ajustes ---------- */
-const FIELDS = ["subs", "debito", "otros", "acapulco"];
+const FIELDS = ["subs", "otros", "acapulco"];
 function syncForm() {
   FIELDS.forEach(f => { const el = $(f); if (document.activeElement !== el) el.value = S.aj[f]; });
   $("banamexLiquidar").checked = !!S.aj.banamexLiquidar;
