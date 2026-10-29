@@ -313,6 +313,13 @@ details.grp > summary .r::after{content:"＋"; font-family:var(--f-body); color:
 details.grp[open] > summary .r::after{content:"－"}
 details.fold > summary .r{white-space:nowrap}
 
+.msplit{display:flex; gap:16px; align-items:center}
+.mlist{display:flex; flex-direction:column; gap:10px; flex:1; min-width:0}
+.mr{display:grid; grid-template-columns:10px minmax(0,1fr) auto; gap:8px; align-items:baseline; font-size:.88rem}
+.mr i{width:10px; height:10px; border-radius:50%; align-self:center}
+.mr small{display:block; font-size:.72rem; color:var(--muted)}
+.mr b{font-family:var(--f-mono); font-weight:600; font-size:.88rem}
+@media (max-width:360px){ .msplit{flex-direction:column; align-items:stretch} .msplit .ringbox{align-self:center} }
 /* ---------- Anillo: componentes ---------- */
 .appbar{background:transparent; border-bottom:0; -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); background:color-mix(in srgb, var(--bg) 70%, transparent)}
 .brand b{font-family:var(--f-display); font-weight:700; font-size:1rem; letter-spacing:-.01em}
@@ -1091,6 +1098,24 @@ function renderHoy(R) {
   $("hoyNote").innerHTML = PNOTE[CUR] || "<strong>Sigue el plan.</strong> Paga en fecha y guarda lo que sobra.";
 }
 
+/* A dónde se va el dinero del periodo: un anillo y 4 renglones */
+function moneySplit(p) {
+  const loose = p.tcSubs.filter(s => !s.inEvent).reduce((s, x) => s + x.amount, 0);
+  const rows = [
+    { k: "Deudas", v: p.debt + p.subs - loose, c: "var(--accent)", s: "" },
+    { k: "Transporte y citas", v: p.transporte + p.citas, c: "var(--bar)", s: "" },
+    { k: p.extra || p.crunchy || p.otros || loose ? "Suscripciones y extras" : "Suscripciones", v: p.debito + loose + p.crunchy + p.extra + p.otros, c: "var(--blue)", op: .45, s: p.extra ? "incluye Acapulco" : "" },
+    { k: "Te queda libre", v: p.free, c: "var(--ok)", s: "" },
+  ].filter(r => r.v);
+  const base = Math.max(p.income, rows.reduce((s, r) => s + Math.max(0, r.v), 0));
+  let acc = 0;
+  const segs = rows.filter(r => r.v > 0).map(r => { const s = { from: acc / base, to: (acc + r.v) / base - .006, color: r.c, op: r.op, cap: "butt" }; acc += r.v; return s; });
+  return `<div class="msplit">
+      <span class="ringbox" style="width:128px; height:128px">${ringSVG(128, 16, segs)}<span class="in"><small>Entra</small><b style="font-family:var(--f-display); font-size:.92rem">${money0(p.income)}</b></span></span>
+      <div class="mlist">${rows.map(r => `<div class="mr"><i style="background:${r.c}; ${r.op ? `opacity:${r.op + .2}` : ""}"></i><span>${r.k}${r.s ? `<small>${r.s}</small>` : ""}</span><b class="${r.v < 0 ? "c-bad" : ""}">${money0(r.v)}</b></div>`).join("")}</div>
+    </div>
+    ${p.carryIn || p.cum !== p.free ? `<p class="muted" style="font-size:.8rem">Con lo que traes ahorrado, cierras el periodo con <b class="mono" style="color:${p.cum < 0 ? "var(--bad)" : "var(--ok)"}">${money0(p.cum)}</b>.</p>` : ""}`;
+}
 function renderPagos() {
   const P = S.plan, el = $("chips");
   const last = Math.max(8, Math.min(NP, periodOf(Math.min(P.zAll === Infinity ? HORIZON : P.zAll, HORIZON)) || NP));
@@ -1133,23 +1158,7 @@ function renderPagos() {
     ${paidL.length ? `<details class="card fold" data-fold="paid${p.n}" ${fo("paid")}><summary><span>Pagados · ${paidL.length}</span><span class="r">${money(paidSum)}</span></summary>
       <div class="fb"><div class="rows">${paidL.map(e => payRow(e, "t-", true)).join("")}</div><p class="muted" style="font-size:.78rem">Si pagaste otra cantidad, corrígela en "Pagaste". Para desmarcar, toca el círculo.</p></div></details>` : ""}
     <details class="card fold" data-fold="money${p.n}" ${fo("money")}><summary><span>Tu dinero del mes</span><span class="r">${money0(p.free)} libres</span></summary>
-      <div class="fb">
-        ${L("", `<b>${incomeLbl}</b>`, `<b>${money(p.income)}</b>`)}
-        ${L("minus", `Pagos de deudas${evIn(p).some(e => e.subsIn) ? " (con suscripciones de tarjeta)" : ""}`, money(p.debt + p.subs - loose))}
-        ${p.debito ? L("minus", "Suscripciones a débito", money(p.debito)) : ""}
-        ${L("minus", `Transporte (${ps.total} días × $152)`, money(p.transporte))}
-        ${pasHTML}
-        ${p.citas ? L("minus", "Citas con tu novia", money(p.citas)) : ""}
-        ${loose ? L("minus", `Suscripciones en tarjeta (${esc(tcLoose.map(s => s.name.replace(/ \(.*\)$/, "")).join(", "))})`, money(loose)) : ""}
-        ${p.crunchy ? L("minus", "Crunchyroll anual (1 de 4)", money(p.crunchy)) : ""}
-        ${p.extra ? L("minus", "Tu parte de Acapulco", money(p.extra)) : ""}
-        ${p.otros ? L("minus", "Otros gastos tuyos", money(p.otros)) : ""}
-        <div class="perf" aria-hidden="true"></div>
-        <div class="line free ${p.free < 0 ? "neg" : ""}"><span>Te queda libre</span><span class="mono">${money(p.free)}</span></div>
-        ${p.carryIn ? L("", '<span class="muted">Traes ahorrado de antes</span>', money(p.carryIn)) : ""}
-        ${L("", '<span class="muted">Ahorro acumulado al cierre</span>', `<span style="color:${p.cum < 0 ? "var(--bad)" : "var(--ok)"}">${money(p.cum)}</span>`)}
-        ${ch ? `<div class="have"><span class="eyebrow">${ch.lbl}</span><b>${money(ch.v)}</b><span class="s">${p.n === 1 ? `${money(p.income)} − ${money0(ps.spent)} de pasajes − ${money0(paidSum)} de pagos.` : `${money0(ps.rest)} de pasajes + ${money0(pending)} de pagos que faltan.`}</span></div>` : ""}
-      </div></details>
+      <div class="fb">${moneySplit(p)}</div></details>
     ${PNOTE[p.n] ? `<div class="note">${PNOTE[p.n]}</div>` : ""}`;
 }
 
