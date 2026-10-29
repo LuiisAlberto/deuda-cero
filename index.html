@@ -287,6 +287,32 @@ ul.tips{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:6p
 .check{display:flex; gap:10px; align-items:flex-start; cursor:pointer; grid-column:1 / -1}
 .savebar{grid-column:1 / -1; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
 footer.fine{font-size:.78rem; color:var(--muted); display:flex; flex-direction:column; gap:6px}
+/* ---------- Pagos simplificado ---------- */
+.psum{display:flex; gap:14px; align-items:center}
+.psum .ringbox > .in b{font-family:var(--f-display); font-size:.95rem}
+.psum .tt{display:flex; flex-direction:column; gap:2px; min-width:0}
+.psum .tt b{font-family:var(--f-display); font-weight:800; font-size:1.7rem; letter-spacing:-.04em; line-height:1.05}
+.flow{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px}
+.flow > div{background:var(--raise); border-radius:16px; padding:9px 10px; display:flex; flex-direction:column; gap:1px; min-width:0}
+.flow span{font-size:.68rem; color:var(--muted); font-weight:600; letter-spacing:.04em; text-transform:uppercase}
+.flow b{font-family:var(--f-mono); font-size:.92rem; font-weight:600; white-space:nowrap}
+.grp-h{display:flex; justify-content:space-between; font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:6px 0 0}
+.sub2{font-size:.78rem; color:var(--muted); line-height:1.3}
+.sub2 .lq{color:var(--accent-text); font-weight:700}
+details.fold{padding:0}
+details.fold > summary{list-style:none; cursor:pointer; padding:14px 16px; min-height:52px; display:flex; align-items:center; justify-content:space-between; gap:10px; font-weight:700}
+details.fold > summary::-webkit-details-marker{display:none}
+details.fold > summary .r{display:flex; align-items:center; gap:8px; font-family:var(--f-mono); font-weight:600; font-size:.88rem; color:var(--muted)}
+details.fold > summary .r::after{content:"＋"; font-family:var(--f-body); color:var(--blue)}
+details.fold[open] > summary .r::after{content:"－"}
+details.fold > .fb{padding:0 16px 14px; display:flex; flex-direction:column; gap:10px}
+details.grp > summary{list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; min-height:44px; font-size:.86rem; font-weight:700; color:var(--blue); border-top:1px solid var(--line)}
+details.grp > summary::-webkit-details-marker{display:none}
+details.grp > summary .r{font-family:var(--f-mono); color:var(--muted); font-weight:600; display:flex; gap:8px; align-items:center}
+details.grp > summary .r::after{content:"＋"; font-family:var(--f-body); color:var(--blue)}
+details.grp[open] > summary .r::after{content:"－"}
+details.fold > summary .r{white-space:nowrap}
+
 /* ---------- Anillo: componentes ---------- */
 .appbar{background:transparent; border-bottom:0; -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); background:color-mix(in srgb, var(--bg) 70%, transparent)}
 .brand b{font-family:var(--f-display); font-weight:700; font-size:1rem; letter-spacing:-.01em}
@@ -403,7 +429,7 @@ input[type=checkbox]{border-radius:50%; width:26px; height:26px}
   <!-- PAGOS -->
   <section class="panel" id="tab-pagos" aria-label="Pagos" hidden>
     <div class="chips" id="chips" role="group" aria-label="Periodo"></div>
-    <article class="card" id="ticket"></article>
+    <div id="ticket" style="display:flex; flex-direction:column; gap:14px"></div>
   </section>
 
   <!-- DEUDAS -->
@@ -655,7 +681,7 @@ function buildDebts(aj) {
       sched: monthlyDates(2026, 11, 1, 5).map(d => [d, 85000]), kind: "cuota", liq: null, info: "1 de 6 pagado al 7 oct" },
     { key: "conc3", cat: "Concierto", name: "Nsqk", cuota: 60350, saldo: 181050, freq: "Mensual · día 1", n: 3, pre: 0,
       sched: monthlyDates(2026, 11, 1, 3).map(d => [d, 60350]), kind: "cuota", liq: null, info: "Empieza en noviembre · 3 pagos" },
-    { key: "conc4", cat: "Concierto", name: "Evento GTA VI (boleto)", cuota: 74800, saldo: 74800, freq: "Pago único · débito", n: 1, pre: 0,
+    { key: "conc4", cat: "Concierto", name: "Evento GTA VI", cuota: 74800, saldo: 74800, freq: "Pago único · débito", n: 1, pre: 0,
       sched: [[D(2026, 11, 3), 74800]], kind: "cuota", liq: null, info: "Lo que falta del boleto: un pago el 3 nov" },
   ];
 }
@@ -779,7 +805,7 @@ const ICON_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const TODAY = toInt(new Date());
 const CUR = periodOf(TODAY) || (TODAY < PERIODS[0].start ? 1 : NP);
 const S = { aj: { ...DEFAULT_AJ }, paid: {}, steps: {}, sel: CUR, store: "none", canWrite: true, db: null, plan: null, ev: {}, dm: {},
-  tab: "hoy", filter: "todas", mas: "gastos", chartSel: CUR, statusKind: "", statusTxt: "", gastos: {}, gTipo: "personal", stmtOpen: {} };
+  tab: "hoy", filter: "todas", mas: "gastos", chartSel: CUR, statusKind: "", statusTxt: "", gastos: {}, gTipo: "personal", stmtOpen: {}, fold: {} };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const num = (v, d, lo = 0, hi = 1e7) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
@@ -954,15 +980,16 @@ const checkBadge = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r + 4}" st
 function payRow(e, pre, editable) {
   const d = S.dm[e.key] || { name: e.name }, paid = S.paid[e.id], late = !paid && e.date < TODAY, id = pre + e.id;
   const when = e.kind === "liquidar" && e.date === AGUINALDO ? "Aguin." : fmtD(e.date);
-  const tags = [`<span class="tag ${e.kind === "liquidar" ? "liq" : e.kind === "ultimo" ? "last" : e.kind === "sinint" ? "warn" : ""}">${KIND[e.kind]}</span>`];
-  if (e.kind === "liquidar" && e.interest) tags.push(`<span class="tag bad">+~${money0(e.interest)} intereses</span>`);
-  if (e.subsIn) tags.push(`<span class="tag warn" title="${esc(subsNames(e))}">Incl. ${money0(e.subsIn)} de ${(e.subsList || []).some(s => s.key === "gta") ? "cargos" : "suscripciones"}</span>`);
-  if (late) tags.push('<span class="tag bad">Vencido</span>');
-  if (paid) tags.push('<span class="tag ok">Pagado</span>');
+  const bits = [];
+  if (late) bits.push('<span class="c-bad">Vencido</span>');
+  if (e.kind === "liquidar") bits.push('<span class="lq">Liquidar</span>');
+  else if (e.kind !== "cuota" && !(e.kind === "ultimo" && d.n === 1)) bits.push(KIND[e.kind]);
+  if (e.subsIn) bits.push(`incluye ${esc(subsNames(e))}`);
+  if (e.kind === "liquidar" && e.interest) bits.push(`~${money0(e.interest)} de intereses`);
   return `<div class="item ${paid ? "done" : ""}"><label class="row" for="${id}">
       <input type="checkbox" id="${id}" data-ev="${e.id}" ${paid ? "checked" : ""} ${S.canWrite ? "" : "disabled"} aria-label="Marcar ${esc(d.name)} ${money(e.amount + (e.subsIn || 0))} como pagado">
       <span class="date mono">${when}</span>
-      <span class="what"><span class="name">${esc(d.name)}</span><span class="tags">${tags.join("")}</span></span>
+      <span class="what"><span class="name">${esc(d.name)}</span>${bits.length ? `<span class="sub2">${bits.join(" · ")}</span>` : ""}</span>
       <span class="amt mono">${money(e.amount + (e.subsIn || 0))}</span></label>
     ${paid && editable ? `<div class="paidedit"><label for="m-${id}">Pagaste</label><input class="mono" type="number" step="0.01" min="0" id="m-${id}" data-edit="${e.id}" value="${(paid.monto / 100).toFixed(2)}" ${S.canWrite ? "" : "disabled"}></div>` : ""}
   </div>`;
@@ -1071,40 +1098,58 @@ function renderPagos() {
     el.innerHTML = PERIODS.slice(0, last).map(q => `<button type="button" class="chip" data-chip="${q.n}">${q.n === CUR ? '<span class="now" aria-hidden="true"></span>' : ""}${esc(q.n === 1 ? "7–27 oct" : q.name)}</button>`).join("");
   }
   el.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.chip) === S.sel)));
-  const p = P.periods[S.sel - 1];
-  const paidSum = paidIn(p), pending = pendIn(p), ps = pasajes(p), now = p.n === CUR;
+  const p = P.periods[S.sel - 1], now = p.n === CUR;
+  const all = evIn(p).sort((a, b) => a.date - b.date || a.key.localeCompare(b.key));
+  const paidL = all.filter(e => S.paid[e.id]), pendL = all.filter(e => !S.paid[e.id]);
+  const paidSum = paidIn(p), pending = pendIn(p), ps = pasajes(p), ch = now ? cuentaHoy(p) : null;
+  const sumOf = l => l.reduce((s, e) => s + e.amount + (e.subsIn || 0), 0);
+  const fo = k => S.fold[k + p.n] ? "open" : "";
   const incomeLbl = p.n === 1 ? "Efectivo al 7 oct" : p.aguinaldo ? "Nómina + aguinaldo" : "Nómina";
+  const L = (cls, a, b) => `<div class="line ${cls}"><span>${a}</span><span class="mono">${b}</span></div>`;
+  // Lista de lo que falta: en el periodo actual, primero los próximos 7 días
+  let porPagar;
+  if (!pendL.length) porPagar = '<p class="muted">Todo lo de este periodo está pagado.</p>';
+  else if (now) {
+    const lim = addDays(TODAY, 7), soon = pendL.filter(e => e.date <= lim), later = pendL.filter(e => e.date > lim);
+    porPagar = (soon.length ? `<div class="grp-h"><span>Próximos 7 días</span><span class="mono">${money(sumOf(soon))}</span></div><div class="rows">${soon.map(e => payRow(e, "t-", false)).join("")}</div>` : '<p class="muted" style="font-size:.88rem">Nada vence en los próximos 7 días.</p>')
+      + (later.length ? `<details class="grp" data-fold="later${p.n}" ${fo("later")}><summary><span>Después · ${later.length} ${later.length === 1 ? "pago" : "pagos"}</span><span class="r">${money(sumOf(later))}</span></summary><div class="rows">${later.map(e => payRow(e, "t-", false)).join("")}</div></details>` : "");
+  } else porPagar = `<div class="rows">${pendL.map(e => payRow(e, "t-", false)).join("")}</div>`;
+  const tcLoose = p.tcSubs.filter(s => !s.inEvent), loose = tcLoose.reduce((s, x) => s + x.amount, 0);
   const pasHTML = now ? `<div class="pas">
       <div class="dstrip" aria-hidden="true">${Array.from({ length: ps.total }, (_, i) => `<i class="${i < ps.used ? "u" : i === ps.used && ps.today ? "t" : ""}"></i>`).join("")}</div>
-      <div class="pas-l"><span>Usaste <b>${nd(ps.used)} · ${money0(ps.spent)}</b></span><span class="r">Faltan <b>${nd(ps.left)} · ${money0(ps.rest)}</b></span></div>
-      <div class="pas-l"><span>Lunes a viernes, hoy incluido, hasta el ${fmtD(ps.endT)}</span></div></div>` : "";
-  const ch = now ? cuentaHoy(p) : null;
-  const tcLoose = p.tcSubs.filter(s => !s.inEvent), loose = tcLoose.reduce((s, x) => s + x.amount, 0), inPay = p.subs - loose;
-  const L = (cls, a, b) => `<div class="line ${cls}"><span>${a}</span><span class="mono">${b}</span></div>`;
+      <div class="pas-l"><span>Usaste <b>${nd(ps.used)} · ${money0(ps.spent)}</b></span><span class="r">Faltan <b>${nd(ps.left)} · ${money0(ps.rest)}</b></span></div></div>` : "";
   $("ticket").innerHTML = `
-    <div class="card-h"><div><span class="eyebrow">${p.n === 1 ? "Antes de la nómina" : "Periodo de nómina"}${p.n === CUR ? " · ahora" : ""}</span><h2 style="font-size:1.3rem">${esc(p.n === 1 ? "Arranque" : p.name)}</h2><span class="muted" style="font-size:.82rem">${esc(p.range)} ${p.n === 1 ? "" : dY(p.end)}</span></div>
-      <div style="text-align:right"><span class="eyebrow">Te falta pagar</span><div class="mono" style="font-weight:600; font-size:1.1rem; color:${pending ? "var(--ink)" : "var(--ok)"}">${money(pending)}</div></div></div>
-    ${L("", `<b>${incomeLbl}</b>`, `<b>${money(p.income)}</b>`)}
-    ${p.carryIn ? L("", '<span class="muted">Traes ahorrado de antes</span>', money(p.carryIn)) : ""}
-    ${L("minus", `Transporte (${ps.total} días × $152)`, money(p.transporte))}
-    ${pasHTML}
-    ${p.citas ? L("minus", "Citas con tu novia", money(p.citas)) : ""}
-    ${loose ? L("minus", `Suscripciones en tarjeta<br><span class="muted" style="font-size:.8rem">${esc(tcLoose.map(s => s.name.replace(/ \(.*\)$/, "")).join(", "))} · van en tu pago de Banamex</span>`, money(loose)) : ""}
-    ${p.crunchy ? L("minus", "Crunchyroll anual (1 de 4)", money(p.crunchy)) : ""}
-    ${p.extra ? L("minus", "Tu parte de Acapulco", money(p.extra)) : ""}
-    ${p.otros ? L("minus", "Otros gastos tuyos", money(p.otros)) : ""}
-    <div class="perf" aria-hidden="true"></div>
-    <div class="card-h"><span class="eyebrow">Pagos de deudas (${p.events.length})</span><span class="mono muted" style="font-size:.85rem">${money(p.debt + inPay)}</span></div>
-    ${inPay ? `<p class="muted" style="font-size:.8rem; margin:-6px 0 0">Los pagos de tarjeta ya traen sumadas tus suscripciones${p.tcSubs.some(s => s.key === "gta") ? " y el GTA VI" : ""} (${money0(inPay)}), como en el estado de cuenta.</p>` : ""}
-    <div class="rows">${p.events.map(e => payRow(e, "t-", true)).join("") || '<p class="muted">Sin pagos de deudas en este periodo.</p>'}</div>
-    ${p.subEv.length ? `<div class="perf" aria-hidden="true"></div>
-    <div class="card-h"><span class="eyebrow">Suscripciones a débito (${p.subEv.length})</span><span class="mono muted" style="font-size:.85rem">${money(p.debito)}</span></div>
-    <div class="rows">${p.subEv.map(e => payRow(e, "t-", true)).join("")}</div>` : ""}
-    <div class="perf" aria-hidden="true"></div>
-    <div class="line free ${p.free < 0 ? "neg" : ""}"><span>Te queda libre</span><span class="mono">${money(p.free)}</span></div>
-    ${L("", '<span class="muted">Ahorro acumulado al cierre</span>', `<span style="color:${p.cum < 0 ? "var(--bad)" : "var(--ok)"}">${money(p.cum)}</span>`)}
-    ${paidSum ? L("", '<span class="muted">Ya pagaste en este periodo</span>', money(paidSum)) : ""}
-    ${ch ? `<div class="have"><span class="eyebrow">${ch.lbl}</span><b>${money(ch.v)}</b><span class="s">${p.n === 1 ? `${money(p.income)} − ${money0(ps.spent)} de pasajes − ${money0(paidSum)} de pagos. Si tienes menos, algo más salió.` : `${money0(ps.rest)} de pasajes + ${money0(pending)} de pagos que faltan.`}</span></div>` : ""}
+    <article class="card">
+      <div><span class="eyebrow">${p.n === 1 ? "Antes de la nómina" : "Periodo de nómina"}${now ? " · ahora" : ""}</span>
+        <h2 style="font-size:1.15rem">${esc(p.n === 1 ? "Arranque" : p.name)} <span class="muted" style="font-family:var(--f-body); font-weight:500; font-size:.82rem; letter-spacing:0">${esc(p.range)}</span></h2></div>
+      <div class="psum">${miniRing(paidSum + pending ? paidSum / (paidSum + pending) : 1, "var(--ok)", 78, 9, `<b>${paidL.length}/${all.length}</b><small>pagos</small>`)}
+        <div class="tt"><span class="eyebrow">${pending ? "Te falta pagar" : "Todo pagado"}</span><b class="${pending ? "" : "c-ok"}">${money(pending)}</b><span class="muted" style="font-size:.82rem">Ya pagaste ${money0(paidSum)}</span></div></div>
+      <div class="flow"><div><span>Entra</span><b>${money0(p.income)}</b></div><div><span>Sale</span><b>${money0(p.income - p.free)}</b></div><div><span>Te queda</span><b class="${p.free < 0 ? "c-bad" : "c-ok"}">${money0(p.free)}</b></div></div>
+    </article>
+    <article class="card">
+      <div class="card-h"><h2>Por pagar</h2><span class="mono muted" style="font-size:.85rem">${pendL.length} ${pendL.length === 1 ? "pago" : "pagos"}</span></div>
+      ${porPagar}
+    </article>
+    ${paidL.length ? `<details class="card fold" data-fold="paid${p.n}" ${fo("paid")}><summary><span>Pagados · ${paidL.length}</span><span class="r">${money(paidSum)}</span></summary>
+      <div class="fb"><div class="rows">${paidL.map(e => payRow(e, "t-", true)).join("")}</div><p class="muted" style="font-size:.78rem">Si pagaste otra cantidad, corrígela en "Pagaste". Para desmarcar, toca el círculo.</p></div></details>` : ""}
+    <details class="card fold" data-fold="money${p.n}" ${fo("money")}><summary><span>Tu dinero del mes</span><span class="r">${money0(p.free)} libres</span></summary>
+      <div class="fb">
+        ${L("", `<b>${incomeLbl}</b>`, `<b>${money(p.income)}</b>`)}
+        ${L("minus", `Pagos de deudas${evIn(p).some(e => e.subsIn) ? " (con suscripciones de tarjeta)" : ""}`, money(p.debt + p.subs - loose))}
+        ${p.debito ? L("minus", "Suscripciones a débito", money(p.debito)) : ""}
+        ${L("minus", `Transporte (${ps.total} días × $152)`, money(p.transporte))}
+        ${pasHTML}
+        ${p.citas ? L("minus", "Citas con tu novia", money(p.citas)) : ""}
+        ${loose ? L("minus", `Suscripciones en tarjeta (${esc(tcLoose.map(s => s.name.replace(/ \(.*\)$/, "")).join(", "))})`, money(loose)) : ""}
+        ${p.crunchy ? L("minus", "Crunchyroll anual (1 de 4)", money(p.crunchy)) : ""}
+        ${p.extra ? L("minus", "Tu parte de Acapulco", money(p.extra)) : ""}
+        ${p.otros ? L("minus", "Otros gastos tuyos", money(p.otros)) : ""}
+        <div class="perf" aria-hidden="true"></div>
+        <div class="line free ${p.free < 0 ? "neg" : ""}"><span>Te queda libre</span><span class="mono">${money(p.free)}</span></div>
+        ${p.carryIn ? L("", '<span class="muted">Traes ahorrado de antes</span>', money(p.carryIn)) : ""}
+        ${L("", '<span class="muted">Ahorro acumulado al cierre</span>', `<span style="color:${p.cum < 0 ? "var(--bad)" : "var(--ok)"}">${money(p.cum)}</span>`)}
+        ${ch ? `<div class="have"><span class="eyebrow">${ch.lbl}</span><b>${money(ch.v)}</b><span class="s">${p.n === 1 ? `${money(p.income)} − ${money0(ps.spent)} de pasajes − ${money0(paidSum)} de pagos.` : `${money0(ps.rest)} de pasajes + ${money0(pending)} de pagos que faltan.`}</span></div>` : ""}
+      </div></details>
     ${PNOTE[p.n] ? `<div class="note">${PNOTE[p.n]}</div>` : ""}`;
 }
 
@@ -1298,7 +1343,9 @@ document.addEventListener("submit", async ev => {
   const m = $("gMonto"), ok = await addGasto(m.value, S.gTipo, $("gNota").value);
   if (ok) { const f = $("gMonto"); if (f) f.focus(); } else m.focus();
 });
-document.addEventListener("toggle", ev => { const d = ev.target; if (d.matches && d.matches("details[data-stmt]")) S.stmtOpen[d.dataset.stmt] = d.open; }, true);
+document.addEventListener("toggle", ev => { const d = ev.target; if (!d.matches) return;
+  if (d.matches("details[data-stmt]")) S.stmtOpen[d.dataset.stmt] = d.open;
+  if (d.matches("details[data-fold]")) S.fold[d.dataset.fold] = d.open; }, true);
 /* App instalable: solo en GitHub Pages */
 (() => {
   const gh = /github\.io$/.test(location.hostname);
