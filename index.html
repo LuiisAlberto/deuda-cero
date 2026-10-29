@@ -514,7 +514,10 @@ const fmtDY = n => `${dD(n)} ${MES[dM(n) - 1]} ${String(dY(n)).slice(2)}`;
 const toInt = dt => D(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
 const daysBetween = (a, b) => Math.round((new Date(dY(b), dM(b) - 1, dD(b)) - new Date(dY(a), dM(a) - 1, dD(a))) / 864e5);
 
-const AGUINALDO = D(2026, 11, 28);   // llega junto con la nómina de fin de noviembre (dato tuyo)
+const AGUINALDO = D(2026, 11, 28);   // fecha por confirmar: por ahora, junto con la nómina de fin de noviembre
+const AGUINALDO_AMT = 2277100;       // nómina + aguinaldo ≈ $47,548 (dato tuyo: no tienes el año completo)
+/* Préstamos: fecha en que se liquida cada uno (los que no caben con el aguinaldo siguen con sus cuotas y se liquidan después) */
+const LOAN_LIQ = { digitt: AGUINALDO, creditea: D(2027, 1, 28), storipres: D(2027, 1, 28), nupres: D(2027, 2, 28) };   // te deja ≥ $5,000 libres cada mes
 /* Tarjetas: día de corte, día límite (dueNext = el límite cae el mes siguiente al corte) y último estado de cuenta revisado. */
 const CARDS = {
   banamex:    { name: "Banamex", cut: 8, due: 28, dueNext: false, lastCut: D(2026, 10, 8) },
@@ -606,19 +609,19 @@ function buildDebts(aj) {
   return [
     /* Digitt: vence el día 3 (correo del 29 oct: pago 8 de 12 por $1,689.15 el 3 nov). Lo pagas a mano desde tu débito Banamex. */
     { key: "digitt", cat: "Préstamo", name: "Digitt", cuota: 168915, saldo: 844575, freq: "Mensual · día 3 · a mano con débito Banamex",
-      sched: monthlyDates(2026, 11, 3, 5).map(d => [d, 168915]), kind: "cuota", liq: L(AGUINALDO),
+      sched: monthlyDates(2026, 11, 3, 5).map(d => [d, 168915]), kind: "cuota", liq: L(LOAN_LIQ.digitt),
       info: "7 de 12 pagados · el 8 vence el 3 nov" },
     { key: "nupres", cat: "Préstamo", name: "Nu Préstamo", cuota: 97250, saldo: 1361500, freq: "Mensual · día 4 · transfieres a tu cuenta Nu",
-      sched: monthlyDates(2026, 11, 4, 14).map(d => [d, 97250]), kind: "cuota", liq: L(AGUINALDO),
+      sched: monthlyDates(2026, 11, 4, 14).map(d => [d, 97250]), kind: "cuota", liq: L(LOAN_LIQ.nupres),
       info: "2 de 16 pagados · el 3 vence el 4 nov" },
     /* Fechas de la app de Stori: 15 y fin de mes; si cae en fin de semana o festivo, el siguiente día hábil. */
     { key: "storipres", cat: "Préstamo", name: "Stori Préstamo", cuota: 90631, saldo: 1178203, freq: "Quincenal · 15 y fin de mes (día hábil)",
       sched: [D(2026, 10, 15), D(2026, 11, 2), D(2026, 11, 17), D(2026, 11, 30), D(2026, 12, 15), D(2026, 12, 31), D(2027, 1, 15),
               D(2027, 2, 1), D(2027, 2, 15), D(2027, 3, 1), D(2027, 3, 15), D(2027, 3, 31), D(2027, 4, 15)].map(d => [d, 90631]),
-      kind: "cuota", liq: L(AGUINALDO),
+      kind: "cuota", liq: L(LOAN_LIQ.storipres),
       info: "6 de 18 pagados · faltan 12 (pago 7 el 2 nov)" },
     { key: "creditea", cat: "Préstamo", name: "Creditea", cuota: 48691, saldo: 632983, freq: "Quincenal · 15 y 30 (puede moverse un día)",
-      sched: [[D(2026, 10, 14), 48691], ...quincenalDates(D(2026, 10, 30), [15, 30], 12).map(d => [d, 48691])], kind: "cuota", liq: L(AGUINALDO),
+      sched: [[D(2026, 10, 14), 48691], ...quincenalDates(D(2026, 10, 30), [15, 30], 12).map(d => [d, 48691])], kind: "cuota", liq: L(LOAN_LIQ.creditea),
       info: "11 de 24 pagados · faltan 13" },
     /* Tarjetas: estados de cuenta de octubre 2026. saldo = deuda al corte + lo que pagaste antes del corte. */
     { key: "plata", cat: "Tarjeta", name: "Plata Card", cuota: 85000, saldo: 812486, freq: "Corte día 12 · paga el 10",
@@ -724,7 +727,7 @@ function buildPlan(aj) {
   let paidCum = 0;
   for (const p of periods) {
     p.events.sort((a, b) => a.date - b.date || a.key.localeCompare(b.key));
-    p.income = (p.n === 1 ? 654621 : 2477700) + (p.start <= AGUINALDO && AGUINALDO <= p.end ? 4955400 : 0);
+    p.income = (p.n === 1 ? 654621 : 2477700) + (p.start <= AGUINALDO && AGUINALDO <= p.end ? AGUINALDO_AMT : 0);
     p.aguinaldo = p.start <= AGUINALDO && AGUINALDO <= p.end;
     p.transporte = (p.n === 1 ? 16 : 22) * 15200;   // combi $12 + camión $45 + metro $5, regreso metro $5 + camión $45 + taxi $40
     p.citas = p.n === 1 ? 0 : 250000;
@@ -750,7 +753,7 @@ const money = c => (c < 0 ? "-$" : "$") + (Math.abs(c) / 100).toLocaleString("en
 const money0 = c => (c < 0 ? "-$" : "$") + Math.round(Math.abs(c) / 100).toLocaleString("en-US");
 const monthYear = n => n === Infinity || !n ? "después de ene 2028" : `${MES_L[dM(n) - 1]} ${dY(n)}`;
 
-if (typeof module !== "undefined") module.exports = { buildPlan, PERIODS, money, fmtD, monthYear, AGUINALDO, SUBS_TOTAL, CARDS };
+if (typeof module !== "undefined") module.exports = { LOAN_LIQ, buildPlan, PERIODS, money, fmtD, monthYear, AGUINALDO, SUBS_TOTAL, CARDS };
 
 
 /* ===== App ===== */
@@ -765,8 +768,10 @@ const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: 
 const PNOTE = {
   1: "<strong>Modo contención.</strong> Solo mínimos y cuotas obligatorias para seguir al corriente en Buró. Nada de salidas pagadas ni compras con tarjeta hasta el 28.",
   2: "<strong>Noviembre viene cargado.</strong> 3 nov: paga Digitt a mano desde tu débito Banamex ($1,689.15). 4 nov: pásale $972.50 a tu cuenta Nu para el préstamo, y paga Stori TC sin intereses. 13 nov: Bradescard solo el mínimo ($1,535). GTA VI: preventa con Banamex entre el 9 y el 18 nov, nunca con otra tarjeta. Anota lo que gastas.",
-  3: "<strong>Llegan tu nómina y el aguinaldo: liquida todo menos Banamex.</strong> Plata, Bradescard, Stori TC, Klar, Nu TC y los 4 préstamos, a más tardar el 30 nov. Antes de pagar, pide en cada app el monto exacto para liquidar (en los préstamos suele ser menor). Lo que sobre es tu colchón: tu nómina de diciembre podría llegar hasta principios de enero.",
+  3: "<strong>Llegan tu nómina y el aguinaldo (~$47,548; fecha por confirmar): liquida las 5 tarjetas y Digitt.</strong> Plata, Bradescard, Stori TC, Klar y Nu TC son las más caras. Creditea, Stori Préstamo y Nu Préstamo siguen con sus pagos normales y se liquidan en enero y febrero. Antes de liquidar, pide en cada app el monto exacto. Tu nómina de diciembre podría llegar hasta principios de enero: lo que sobre es tu colchón.",
   4: "<strong>Acapulco y GTA VI.</strong> Tu parte del viaje ya está apartada, de contado. El pago de Banamex del 28 dic trae el GTA VI ($1,879): paga el total para no generar intereses, no el mínimo. Si tu nómina de diciembre llega hasta enero, ese pago sale de lo que te sobró del aguinaldo.",
+  5: "<strong>Liquida Creditea y Stori Préstamo.</strong> Pide en cada app el monto exacto para liquidar; suele ser menor que lo que falta en cuotas.",
+  6: "<strong>Liquida Nu Préstamo.</strong> Con esto ya no debes nada caro: solo queda Banamex al 15% y tus conciertos.",
 };
 const TABS = ["hoy", "pagos", "deudas", "avance", "mas"];
 const ICON_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>';
