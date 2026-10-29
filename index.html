@@ -650,6 +650,8 @@ function buildDebts(aj) {
       sched: monthlyDates(2026, 11, 1, 5).map(d => [d, 85000]), kind: "cuota", liq: null, info: "1 de 6 pagado al 7 oct" },
     { key: "conc3", cat: "Concierto", name: "Nsqk", cuota: 60350, saldo: 181050, freq: "Mensual · día 1", n: 3, pre: 0,
       sched: monthlyDates(2026, 11, 1, 3).map(d => [d, 60350]), kind: "cuota", liq: null, info: "Empieza en noviembre · 3 pagos" },
+    { key: "conc4", cat: "Concierto", name: "Evento GTA VI (boleto)", cuota: 74800, saldo: 74800, freq: "Pago único · débito", n: 1, pre: 0,
+      sched: [[D(2026, 11, 3), 74800]], kind: "cuota", liq: null, info: "Lo que falta del boleto: un pago el 3 nov" },
   ];
 }
 
