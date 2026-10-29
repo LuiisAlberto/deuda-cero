@@ -514,7 +514,7 @@ const fmtDY = n => `${dD(n)} ${MES[dM(n) - 1]} ${String(dY(n)).slice(2)}`;
 const toInt = dt => D(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
 const daysBetween = (a, b) => Math.round((new Date(dY(b), dM(b) - 1, dD(b)) - new Date(dY(a), dM(a) - 1, dD(a))) / 864e5);
 
-const AGUINALDO = D(2026, 12, 15);   // fecha estimada (~15 dic)
+const AGUINALDO = D(2026, 11, 28);   // llega junto con la nómina de fin de noviembre (dato tuyo)
 /* Tarjetas: día de corte, día límite (dueNext = el límite cae el mes siguiente al corte) y último estado de cuenta revisado. */
 const CARDS = {
   banamex:    { name: "Banamex", cut: 8, due: 28, dueNext: false, lastCut: D(2026, 10, 8) },
@@ -604,11 +604,11 @@ function quincenalDates(first, days, count) {        // days: [14,28] o [15,30]
 function buildDebts(aj) {
   const L = (d) => d;   // fecha de liquidación
   return [
-    /* Digitt: cargo automático el día 3 a tu cuenta Azteca (correo del 29 oct: pago 8 de 12 por $1,689.15 el 3 nov). */
-    { key: "digitt", cat: "Préstamo", name: "Digitt", cuota: 168915, saldo: 844575, freq: "Mensual · día 3 (cargo automático a Azteca)",
+    /* Digitt: vence el día 3 (correo del 29 oct: pago 8 de 12 por $1,689.15 el 3 nov). Lo pagas a mano desde tu débito Banamex. */
+    { key: "digitt", cat: "Préstamo", name: "Digitt", cuota: 168915, saldo: 844575, freq: "Mensual · día 3 · a mano con débito Banamex",
       sched: monthlyDates(2026, 11, 3, 5).map(d => [d, 168915]), kind: "cuota", liq: L(AGUINALDO),
-      info: "7 de 12 pagados · el 8 se cobra el 3 nov" },
-    { key: "nupres", cat: "Préstamo", name: "Nu Préstamo", cuota: 97250, saldo: 1361500, freq: "Mensual · día 4",
+      info: "7 de 12 pagados · el 8 vence el 3 nov" },
+    { key: "nupres", cat: "Préstamo", name: "Nu Préstamo", cuota: 97250, saldo: 1361500, freq: "Mensual · día 4 · transfieres a tu cuenta Nu",
       sched: monthlyDates(2026, 11, 4, 14).map(d => [d, 97250]), kind: "cuota", liq: L(AGUINALDO),
       info: "2 de 16 pagados · el 3 vence el 4 nov" },
     /* Fechas de la app de Stori: 15 y fin de mes; si cae en fin de semana o festivo, el siguiente día hábil. */
@@ -629,11 +629,10 @@ function buildDebts(aj) {
       sched: [[D(2026, 11, 4), 117098, "sinint"]], kind: "minimo", liq: L(D(2026, 11, 28)),
       apr: 0.699, since: D(2026, 11, 4),
       info: "Corte 12 oct: $1,170.98 sin intereses + $971.13 a meses al 69.9%" },
-    /* 13 nov y 13 dic: solo el mínimo (sin eso no alcanza del 28 nov al aguinaldo); se liquida con el aguinaldo con ~$500 de intereses (94.9% + IVA).
-       El mínimo de dic es estimado: confírmalo en el estado del 20 nov. */
+    /* 13 nov: solo el mínimo (noviembre no alcanza con Digitt y Nu Préstamo); se liquida el 28 nov con el aguinaldo, con ~$330 de intereses (94.9% + IVA). */
     { key: "bradescard", cat: "Tarjeta", name: "Bradescard", cuota: 153500, saldo: 663113, freq: "Corte día 20 · paga el 13",
-      sched: [[D(2026, 10, 13), 112677], [D(2026, 11, 13), 153500], [D(2026, 12, 13), 163500]], kind: "minimo", liq: L(AGUINALDO), liqExtra: 50000,
-      info: "Corte 20 oct: saldo $5,504.36. 13 nov y 13 dic pagas el mínimo; se liquida con el aguinaldo" },
+      sched: [[D(2026, 10, 13), 112677], [D(2026, 11, 13), 153500]], kind: "minimo", liq: L(AGUINALDO), liqExtra: 33000,
+      info: "Corte 20 oct: saldo $5,504.36. El 13 nov pagas el mínimo ($1,535) y el 28 nov la liquidas" },
     { key: "klar", cat: "Tarjeta", name: "Klar", cuota: 66592, saldo: 249226, freq: "Corte día 5 · paga el 15",
       sched: [[D(2026, 10, 15), 66593], [D(2026, 11, 15), 66592]], kind: "minimo", liq: L(AGUINALDO),
       apr: 0.3361, since: D(2026, 10, 5),
@@ -765,9 +764,9 @@ function migrateIds(m) { const moved = []; for (const [o, n] of Object.entries(I
 const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago", sinint: "Sin intereses", debito: "Débito" };
 const PNOTE = {
   1: "<strong>Modo contención.</strong> Solo mínimos y cuotas obligatorias para seguir al corriente en Buró. Nada de salidas pagadas ni compras con tarjeta hasta el 28.",
-  2: "<strong>Noviembre viene cargado.</strong> 3 nov: Digitt se cobra solo de tu cuenta Azteca (deja $1,689.15 ahí desde el 2). 4 nov: Nu Préstamo y Stori TC sin intereses. 13 nov: Bradescard solo el mínimo ($1,535); se liquida con el aguinaldo. GTA VI: preventa con Banamex entre el 9 y el 18 nov, nunca con otra tarjeta. Anota lo que gastas.",
-  3: "<strong>El 28 nov liquida Plata y Stori TC con tu nómina.</strong> El 3 dic Digitt se cobra de tu cuenta Azteca y el 13 dic pagas el mínimo de Bradescard. Hasta el aguinaldo (~15 dic) casi todo tu sueldo se va a pagos: no gastes de más esas dos semanas. Con el aguinaldo liquida los 4 préstamos, Bradescard, Klar y Nu TC; pide en cada app el monto exacto. Si el aguinaldo llega después del 15, avísame.",
-  4: "<strong>Acapulco y GTA VI.</strong> Tu parte del viaje ya está apartada, de contado. El pago de Banamex del 28 dic trae el GTA VI ($1,879): paga el total para no generar intereses, no el mínimo.",
+  2: "<strong>Noviembre viene cargado.</strong> 3 nov: paga Digitt a mano desde tu débito Banamex ($1,689.15). 4 nov: pásale $972.50 a tu cuenta Nu para el préstamo, y paga Stori TC sin intereses. 13 nov: Bradescard solo el mínimo ($1,535). GTA VI: preventa con Banamex entre el 9 y el 18 nov, nunca con otra tarjeta. Anota lo que gastas.",
+  3: "<strong>Llegan tu nómina y el aguinaldo: liquida todo menos Banamex.</strong> Plata, Bradescard, Stori TC, Klar, Nu TC y los 4 préstamos, a más tardar el 30 nov. Antes de pagar, pide en cada app el monto exacto para liquidar (en los préstamos suele ser menor). Lo que sobre es tu colchón: tu nómina de diciembre podría llegar hasta principios de enero.",
+  4: "<strong>Acapulco y GTA VI.</strong> Tu parte del viaje ya está apartada, de contado. El pago de Banamex del 28 dic trae el GTA VI ($1,879): paga el total para no generar intereses, no el mínimo. Si tu nómina de diciembre llega hasta enero, ese pago sale de lo que te sobró del aguinaldo.",
 };
 const TABS = ["hoy", "pagos", "deudas", "avance", "mas"];
 const ICON_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>';
@@ -1049,7 +1048,7 @@ function renderHoy(R) {
   const paidP = paidIn(p), pendP = pendIn(p);
   const core = P.debts.filter(d => d.key !== "banamex" && d.cat !== "Concierto"), coreS = core.reduce((s, d) => s + d.saldo, 0), coreR = core.reduce((s, d) => s + R.byKey[d.key].rem, 0);
   $("hoyStats").innerHTML = `
-    <div class="stat">${miniRing(perGone, "var(--bar)", 34, 4)}<div><span class="eyebrow">Nómina</span><b>${nxtPay ? (daysBetween(TODAY, nxtPay.start) === 0 ? "Hoy" : daysBetween(TODAY, nxtPay.start) === 1 ? "Mañana" : daysBetween(TODAY, nxtPay.start) + " días") : "—"}</b><span class="s">${nxtPay ? fmtD(nxtPay.start) + " · " + money0(2477700) : ""}</span></div></div>
+    <div class="stat">${miniRing(perGone, "var(--bar)", 34, 4)}<div><span class="eyebrow">Nómina</span><b>${nxtPay ? (daysBetween(TODAY, nxtPay.start) === 0 ? "Hoy" : daysBetween(TODAY, nxtPay.start) === 1 ? "Mañana" : daysBetween(TODAY, nxtPay.start) + " días") : "—"}</b><span class="s">${nxtPay ? fmtD(nxtPay.start) + " · " + money0(2477700) + (nxtPay.start <= AGUINALDO && AGUINALDO <= nxtPay.end ? " + aguinaldo" : "") : ""}</span></div></div>
     <div class="stat">${miniRing(p.free > 0 ? 1 : 0, "var(--ok)", 34, 4)}<div><span class="eyebrow">Libre del mes</span><b class="${p.free < 0 ? "c-bad" : ""}">${money0(p.free)}</b><span class="s">al ${fmtD(p.end)}</span></div></div>
     <div class="stat">${miniRing(ps.total ? ps.used / ps.total : 0, "var(--bar)", 34, 4)}<div><span class="eyebrow">Pasajes</span><b>${money0(ps.rest)}</b><span class="s">${nd(ps.left)} · hasta ${fmtD(ps.endT)}</span></div></div>
     <div class="stat">${miniRing(paidP + pendP ? paidP / (paidP + pendP) : 1, "var(--accent)", 34, 4)}<div><span class="eyebrow">${ch.lbl}</span><b>${money0(ch.v)}</b><span class="s">${ch.s}</span></div></div>
