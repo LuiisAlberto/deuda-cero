@@ -604,12 +604,13 @@ function quincenalDates(first, days, count) {        // days: [14,28] o [15,30]
 function buildDebts(aj) {
   const L = (d) => d;   // fecha de liquidación
   return [
-    { key: "digitt", cat: "Préstamo", name: "Digitt", cuota: 169000, saldo: 845000, freq: "Mensual · fin de mes",
-      sched: monthlyDates(2026, 11, "eom", 5).map(d => [d, 169000]), kind: "cuota", liq: L(AGUINALDO),
-      info: "Pago 7 de 12 · faltan 5" },
-    { key: "nupres", cat: "Préstamo", name: "Nu Préstamo", cuota: 97250, saldo: 1361500, freq: "Mensual · fin de mes",
-      sched: monthlyDates(2026, 11, "eom", 14).map(d => [d, 97250]), kind: "cuota", liq: L(AGUINALDO),
-      info: "Pago 2 de 16 · faltan 14" },
+    /* Digitt: cargo automático el día 3 a tu cuenta Azteca (correo del 29 oct: pago 8 de 12 por $1,689.15 el 3 nov). */
+    { key: "digitt", cat: "Préstamo", name: "Digitt", cuota: 168915, saldo: 844575, freq: "Mensual · día 3 (cargo automático a Azteca)",
+      sched: monthlyDates(2026, 11, 3, 5).map(d => [d, 168915]), kind: "cuota", liq: L(AGUINALDO),
+      info: "7 de 12 pagados · el 8 se cobra el 3 nov" },
+    { key: "nupres", cat: "Préstamo", name: "Nu Préstamo", cuota: 97250, saldo: 1361500, freq: "Mensual · día 4",
+      sched: monthlyDates(2026, 11, 4, 14).map(d => [d, 97250]), kind: "cuota", liq: L(AGUINALDO),
+      info: "2 de 16 pagados · el 3 vence el 4 nov" },
     /* Fechas de la app de Stori: 15 y fin de mes; si cae en fin de semana o festivo, el siguiente día hábil. */
     { key: "storipres", cat: "Préstamo", name: "Stori Préstamo", cuota: 90631, saldo: 1178203, freq: "Quincenal · 15 y fin de mes (día hábil)",
       sched: [D(2026, 10, 15), D(2026, 11, 2), D(2026, 11, 17), D(2026, 11, 30), D(2026, 12, 15), D(2026, 12, 31), D(2027, 1, 15),
@@ -628,9 +629,11 @@ function buildDebts(aj) {
       sched: [[D(2026, 11, 4), 117098, "sinint"]], kind: "minimo", liq: L(D(2026, 11, 28)),
       apr: 0.699, since: D(2026, 11, 4),
       info: "Corte 12 oct: $1,170.98 sin intereses + $971.13 a meses al 69.9%" },
-    { key: "bradescard", cat: "Tarjeta", name: "Bradescard", cuota: 370023, saldo: 663113, freq: "Corte día 20 · paga el 13",
-      sched: [[D(2026, 10, 13), 112677], [D(2026, 11, 13), 370023, "sinint"]], kind: "minimo", liq: L(D(2026, 11, 28)),
-      info: "Corte 20 oct: saldo $5,504.36 (incluye pagos fijos y anualidad). Mínimo $1,535" },
+    /* 13 nov y 13 dic: solo el mínimo (sin eso no alcanza del 28 nov al aguinaldo); se liquida con el aguinaldo con ~$500 de intereses (94.9% + IVA).
+       El mínimo de dic es estimado: confírmalo en el estado del 20 nov. */
+    { key: "bradescard", cat: "Tarjeta", name: "Bradescard", cuota: 153500, saldo: 663113, freq: "Corte día 20 · paga el 13",
+      sched: [[D(2026, 10, 13), 112677], [D(2026, 11, 13), 153500], [D(2026, 12, 13), 163500]], kind: "minimo", liq: L(AGUINALDO), liqExtra: 50000,
+      info: "Corte 20 oct: saldo $5,504.36. 13 nov y 13 dic pagas el mínimo; se liquida con el aguinaldo" },
     { key: "klar", cat: "Tarjeta", name: "Klar", cuota: 66592, saldo: 249226, freq: "Corte día 5 · paga el 15",
       sched: [[D(2026, 10, 15), 66593], [D(2026, 11, 15), 66592]], kind: "minimo", liq: L(AGUINALDO),
       apr: 0.3361, since: D(2026, 10, 5),
@@ -668,7 +671,7 @@ function planDebt(dbt) {
     const toInt = Math.min(acc, amt), toPrin = amt - toInt; acc -= toInt; rem -= toPrin;
     ev.push({ date: d, amount: amt, principal: toPrin, interest: toInt, kind: rem === 0 ? "ultimo" : k || dbt.kind });
   }
-  if (dbt.liq && rem > 0) { accrue(dbt.liq); ev.push({ date: dbt.liq, amount: rem + acc, principal: rem, interest: acc, kind: "liquidar" }); rem = 0; acc = 0; }
+  if (dbt.liq && rem > 0) { accrue(dbt.liq); acc += dbt.liqExtra || 0; ev.push({ date: dbt.liq, amount: rem + acc, principal: rem, interest: acc, kind: "liquidar" }); rem = 0; acc = 0; }
   dbt.interestTotal = ev.reduce((s, x) => s + (x.interest || 0), 0);
   ev.forEach(e => { e.key = dbt.key; e.period = periodOf(e.date); e.id = `p${e.period}-${dbt.key}-${e.date}`; });
   dbt.events = ev.filter(e => e.period);
@@ -762,8 +765,8 @@ function migrateIds(m) { const moved = []; for (const [o, n] of Object.entries(I
 const KIND = { minimo: "Mínimo", cuota: "Cuota", liquidar: "Liquidar", ultimo: "Último pago", sinint: "Sin intereses", debito: "Débito" };
 const PNOTE = {
   1: "<strong>Modo contención.</strong> Solo mínimos y cuotas obligatorias para seguir al corriente en Buró. Nada de salidas pagadas ni compras con tarjeta hasta el 28.",
-  2: "<strong>GTA VI: haz la preventa con Banamex entre el 9 y el 18 nov</strong> (después del corte del 8), así se paga hasta el 28 dic. Nunca con otra tarjeta. <strong>Paga en fecha y anota lo que gastas.</strong> El 4 nov paga Stori sin intereses y el 13 nov Bradescard completo, para que no te cobren 69.9% y 94.9%. Ni Plata ni Bradescard alcanzan a liquidarse este mes. El kayak sale de los $2,500 de citas (a mitades con tu novia).",
-  3: "<strong>El 28 nov liquida Plata, Bradescard y Stori TC con tu nómina.</strong> Hasta el aguinaldo (~15 dic) casi todo tu sueldo se va a pagos: no gastes de más esas dos semanas. Con el aguinaldo liquida los 4 préstamos, Klar y Nu TC; pide en cada app el monto exacto.",
+  2: "<strong>Noviembre viene cargado.</strong> 3 nov: Digitt se cobra solo de tu cuenta Azteca (deja $1,689.15 ahí desde el 2). 4 nov: Nu Préstamo y Stori TC sin intereses. 13 nov: Bradescard solo el mínimo ($1,535); se liquida con el aguinaldo. GTA VI: preventa con Banamex entre el 9 y el 18 nov, nunca con otra tarjeta. Anota lo que gastas.",
+  3: "<strong>El 28 nov liquida Plata y Stori TC con tu nómina.</strong> El 3 dic Digitt se cobra de tu cuenta Azteca y el 13 dic pagas el mínimo de Bradescard. Hasta el aguinaldo (~15 dic) casi todo tu sueldo se va a pagos: no gastes de más esas dos semanas. Con el aguinaldo liquida los 4 préstamos, Bradescard, Klar y Nu TC; pide en cada app el monto exacto. Si el aguinaldo llega después del 15, avísame.",
   4: "<strong>Acapulco y GTA VI.</strong> Tu parte del viaje ya está apartada, de contado. El pago de Banamex del 28 dic trae el GTA VI ($1,879): paga el total para no generar intereses, no el mínimo.",
 };
 const TABS = ["hoy", "pagos", "deudas", "avance", "mas"];
