@@ -574,7 +574,8 @@ const TC_SUBS = [
   { key: "prime", name: "Amazon Prime", c: 12900, card: "nutc", dn: 27 },
   { key: "duo", name: "Spotify Duo (tus papás)", c: 18900, card: "storitc", dn: 15 },
 ];
-const TC_ONEOFF = [{ key: "seguro", name: "Seguro Banamex Vida (último, ya cancelado)", c: 19249, card: "banamex", date: D(2026, 10, 10) },
+/* El seguro Banamex Vida ya no se cobra desde noviembre (dato tuyo). */
+const TC_ONEOFF = [
   /* Compra planeada: preventa entre el 9 y el 18 nov (después del corte del 8) → estado del 8 dic → se paga completa el 28 dic */
   { key: "gta", name: "GTA VI (preventa Xbox)", c: 187900, card: "banamex", date: D(2026, 11, 12), compra: true }];
 /* Suscripciones a débito: se marcan con check en cada periodo. */
