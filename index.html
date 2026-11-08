@@ -182,7 +182,6 @@ details.stmt[open] summary::after{content:"－"}
 .glist .gi{display:grid; grid-template-columns:50px minmax(0,1fr) auto 40px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); font-size:.88rem}
 .glist .gi:last-child{border-bottom:0}
 .glist .x{width:40px; height:40px; border-radius:10px; border:1px solid var(--line); background:var(--raise); color:var(--muted); cursor:pointer; font-size:1rem}
-.citas-l{display:flex; justify-content:space-between; gap:8px; font-size:.84rem; color:var(--muted)}
 .pas{display:flex; flex-direction:column; gap:6px; margin-top:-4px}
 .dstrip{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:3px}
 .dstrip i{height:10px; border-radius:3px; background:var(--blue)}
@@ -453,7 +452,6 @@ input[type=checkbox]{border-radius:50%; width:26px; height:26px}
       <div class="card-h"><h2>Etapas del plan</h2><span class="muted" style="font-size:.8rem">Una por nómina</span></div>
       <div class="stages" id="stages"></div>
     </div>
-    <div class="grid2" id="trips" style="grid-template-columns:repeat(auto-fit, minmax(240px, 1fr))"></div>
   </section>
 
   <!-- MÁS -->
@@ -511,7 +509,6 @@ input[type=checkbox]{border-radius:50%; width:26px; height:26px}
           <div class="field" hidden><label for="subs">Suscripciones en tarjeta al mes</label><input type="number" id="subs" min="0" step="1" inputmode="decimal"><span class="hint">Hoy $752: Netflix, Google, Prime y Spotify Duo. El seguro Banamex ya está cancelado.</span></div>
           <div class="field" hidden><label for="debito">Suscripciones a débito al mes</label><input type="number" id="debito" min="0" step="1" inputmode="decimal"><span class="hint">Spotify $80 (día 5) + celular Movistar $209 (día 8) + Claude Pro $400 (día 29; 20 dólares, varía entre $350 y $400).</span></div>
           <div class="field"><label for="otros">Otros gastos tuyos al mes</label><input type="number" id="otros" min="0" step="1" inputmode="decimal"><span class="hint">Comida fuera, cosas personales. En 0, todo lo que sobra se ve como ahorro.</span></div>
-          <div class="field"><label for="acapulco">Tu parte del viaje a Acapulco</label><input type="number" id="acapulco" min="0" step="1" inputmode="decimal"><span class="hint">Sale de la nómina del 28 de diciembre.</span></div>
           <div class="savebar"><button class="btn" type="submit" id="saveBtn">Guardar ajustes</button><button class="btn ghost" type="button" id="resetBtn">Valores del plan</button><span class="muted" id="saveMsg" role="status" style="font-size:.85rem"></span></div>
         </form>
       </div>
@@ -764,8 +761,6 @@ function buildPlan(aj) {
     p.income = (p.n === 1 ? 654621 : 2477700) + (p.start <= AGUINALDO && AGUINALDO <= p.end ? AGUINALDO_AMT : 0);
     p.aguinaldo = p.start <= AGUINALDO && AGUINALDO <= p.end;
     p.transporte = (p.n === 1 ? 16 : 22) * 15200;   // combi $12 + camión $45 + metro $5, regreso metro $5 + camión $45 + taxi $40
-    p.citas = p.n === 1 ? 0 : 250000;
-    p.extra = dM(p.start) === 12 && dY(p.start) === 2026 ? Math.round(aj.acapulco * 100) : 0;
     p.otros = Math.round(aj.otros * 100 * (p.n === 1 ? 16 / 22 : 1));
     p.tcSubs = tcEv.filter(s => s.period === p.n);
     p.subs = p.tcSubs.reduce((s, x) => s + x.amount, 0);
@@ -774,7 +769,7 @@ function buildPlan(aj) {
     p.crunchy = CRUNCHY_P.includes(p.n) ? CRUNCHY : 0;
     p.debt = p.events.reduce((s, e) => s + e.amount, 0);
     p.interest = p.events.reduce((s, e) => s + (e.interest || 0), 0);
-    p.free = p.income - p.transporte - p.citas - p.extra - p.otros - p.subs - p.crunchy - p.debito - p.debt;
+    p.free = p.income - p.transporte - p.otros - p.subs - p.crunchy - p.debito - p.debt;
     p.carryIn = carry; carry += p.free; p.cum = carry;
     paidCum += p.debt - p.interest; p.remaining = total0 - paidCum;
   }
@@ -791,7 +786,7 @@ if (typeof module !== "undefined") module.exports = { LOAN_LIQ, buildPlan, PERIO
 
 
 /* ===== App ===== */
-const DEFAULT_AJ = { banamexLiquidar: false, otros: 0, acapulco: 4000, subs: 752, debito: 689 };
+const DEFAULT_AJ = { banamexLiquidar: false, otros: 0, subs: 752, debito: 689 };
 const OLD_SUBS = [1313.49, 961], OLD_DEB = [480];   // valores por defecto anteriores: si quedaron guardados, se cambian por el nuevo
 /* Pagos que cambiaron de fecha: la marca guardada con el id viejo pasa al nuevo */
 const ID_ALIAS = { "p2-creditea-20261028": "p2-creditea-20261030", "p2-creditea-20261114": "p2-creditea-20261115",
@@ -803,7 +798,7 @@ const PNOTE = {
   1: "<strong>Modo contención.</strong> Solo mínimos y cuotas obligatorias para seguir al corriente en Buró. Nada de salidas pagadas ni compras con tarjeta hasta el 28.",
   2: "<strong>Noviembre viene cargado.</strong> 3 nov: paga Digitt a mano desde tu débito Banamex ($1,689.15). 4 nov: pásale $972.50 a tu cuenta Nu para el préstamo, y paga Stori TC sin intereses. 13 nov: Bradescard solo el mínimo ($1,535). GTA VI: preventa con Banamex entre el 9 y el 18 nov, nunca con otra tarjeta. Anota lo que gastas.",
   3: "<strong>Llegan tu nómina y el aguinaldo (~$47,548; fecha por confirmar): liquida las 5 tarjetas y Digitt.</strong> Plata, Bradescard, Stori TC, Klar y Nu TC son las más caras. Creditea, Stori Préstamo y Nu Préstamo siguen con sus pagos normales y se liquidan en enero y febrero. Antes de liquidar, pide en cada app el monto exacto. Tu nómina de diciembre podría llegar hasta principios de enero: lo que sobre es tu colchón.",
-  4: "<strong>Acapulco y GTA VI.</strong> Tu parte del viaje ya está apartada, de contado. El pago de Banamex del 28 dic trae el GTA VI ($1,879): paga el total para no generar intereses, no el mínimo. Si tu nómina de diciembre llega hasta enero, ese pago sale de lo que te sobró del aguinaldo.",
+  4: "<strong>GTA VI.</strong> El pago de Banamex del 28 dic trae el GTA VI ($1,879): paga el total para no generar intereses, no el mínimo. Si tu nómina de diciembre llega hasta enero, ese pago sale de lo que te sobró del aguinaldo.",
   5: "<strong>Liquida Creditea y Stori Préstamo.</strong> Pide en cada app el monto exacto para liquidar; suele ser menor que lo que falta en cuotas.",
   6: "<strong>Liquida Nu Préstamo.</strong> Con esto ya no debes nada caro: solo queda Banamex al 15% y tus conciertos.",
 };
@@ -813,14 +808,14 @@ const ICON_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const TODAY = toInt(new Date());
 const CUR = periodOf(TODAY) || (TODAY < PERIODS[0].start ? 1 : NP);
 const S = { aj: { ...DEFAULT_AJ }, paid: {}, steps: {}, sel: CUR, store: "none", canWrite: true, db: null, plan: null, ev: {}, dm: {},
-  tab: "hoy", filter: "todas", mas: "gastos", chartSel: CUR, statusKind: "", statusTxt: "", gastos: {}, gTipo: "personal", stmtOpen: {}, fold: {} };
+  tab: "hoy", filter: "todas", mas: "gastos", chartSel: CUR, statusKind: "", statusTxt: "", gastos: {}, stmtOpen: {}, fold: {} };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const num = (v, d, lo = 0, hi = 1e7) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function sanitizeAj(a) {
-  return { banamexLiquidar: !!a.banamexLiquidar, otros: num(a.otros, 0), acapulco: num(a.acapulco, 4000), subs: OLD_SUBS.includes(Number(a.subs)) ? DEFAULT_AJ.subs : num(a.subs, DEFAULT_AJ.subs), debito: OLD_DEB.includes(Number(a.debito)) ? DEFAULT_AJ.debito : num(a.debito, DEFAULT_AJ.debito) };
+  return { banamexLiquidar: !!a.banamexLiquidar, otros: num(a.otros, 0), subs: OLD_SUBS.includes(Number(a.subs)) ? DEFAULT_AJ.subs : num(a.subs, DEFAULT_AJ.subs), debito: OLD_DEB.includes(Number(a.debito)) ? DEFAULT_AJ.debito : num(a.debito, DEFAULT_AJ.debito) };
 }
 
 /* ---------- Tema ---------- */
@@ -1030,16 +1025,14 @@ function renderSpend() {
   el.hidden = false;
   const gs = Object.entries(S.gastos).map(([id, g]) => ({ id, ...g })).filter(g => g.fecha >= p.start && g.fecha <= p.end)
     .sort((a, b) => b.fecha - a.fecha || (b.t || 0) - (a.t || 0));
-  const pers = gs.filter(g => g.tipo !== "citas").reduce((s, g) => s + g.monto, 0);
-  const cit = gs.filter(g => g.tipo === "citas").reduce((s, g) => s + g.monto, 0);
-  const over = Math.max(0, cit - p.citas);
-  const hoyG = gs.filter(g => g.fecha === TODAY && g.tipo !== "citas").reduce((s, g) => s + g.monto, 0);
-  const disp = p.free - pers - over;                         // libre que te queda este periodo
+  const pers = gs.reduce((s, g) => s + g.monto, 0);
+  const hoyG = gs.filter(g => g.fecha === TODAY).reduce((s, g) => s + g.monto, 0);
+  const disp = p.free - pers;                         // libre que te queda este periodo
   const dias = daysBetween(TODAY, p.end) + 1;
   const porDia = Math.max(0, Math.floor((disp + hoyG) / dias / 100) * 100);
   const hoy = porDia - hoyG;
   const rows = gs.slice(0, 6).map(g => `<div class="gi"><span class="mono muted" style="font-size:.8rem">${fmtD(g.fecha)}</span>
-      <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(g.nota || (g.tipo === "citas" ? "Cita" : "Gasto"))}${g.tipo === "citas" ? ' <span class="tag">Citas</span>' : ""}</span>
+      <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(g.nota || "Gasto")}</span>
       <span class="mono">${money(g.monto)}</span>
       <button type="button" class="x" data-delg="${g.id}" aria-label="Borrar gasto de ${money(g.monto)}" ${S.canWrite ? "" : "disabled"}>✕</button></div>`).join("");
   el.innerHTML = `
@@ -1047,14 +1040,12 @@ function renderSpend() {
       <div class="big2 ${hoy < 0 ? "c-bad" : ""}">${hoy < 0 ? "−" + money0(-hoy) : money0(hoy)}</div></div>
       ${miniRing(porDia ? hoyG / porDia : (hoyG ? 1 : 0), hoyG > porDia ? "var(--bad)" : "var(--bar)", 62, 7, `<small>al día</small><b>${money0(porDia)}</b>`)}</div>
     <span class="s">${disp >= 0 ? `Te quedan ${money0(disp)} libres hasta el ${fmtD(p.end)} (${nd(dias)}). Lo que no gastes se suma a tu ahorro.` : `Te pasaste ${money0(-disp)} de lo libre del periodo: recorta lo que sigue.`}</span>
-    ${p.citas ? `<div class="citas-l"><span>Citas: llevas ${money0(cit)} de ${money0(p.citas)}</span><span class="${cit > p.citas ? "c-bad" : ""}">${cit > p.citas ? "Te pasaste " + money0(cit - p.citas) : "Quedan " + money0(p.citas - cit)}</span></div>` : ""}
     <form id="spendForm" autocomplete="off">
       <input class="mono" type="number" id="gMonto" min="0" step="0.01" inputmode="decimal" placeholder="$ monto" aria-label="Monto del gasto" ${S.canWrite ? "" : "disabled"}>
       <input type="text" id="gNota" maxlength="60" placeholder="¿En qué? (opcional)" aria-label="En qué gastaste" ${S.canWrite ? "" : "disabled"}>
-      <div class="seg full" role="group" aria-label="Tipo de gasto"><button type="button" data-gtipo="personal" aria-pressed="${S.gTipo === "personal"}">Personal</button><button type="button" data-gtipo="citas" aria-pressed="${S.gTipo === "citas"}">Citas</button></div>
       <button class="btn full" type="submit" ${S.canWrite ? "" : "disabled"}>Anotar gasto</button>
     </form>
-    ${rows ? `<div class="glist">${rows}</div>${gs.length > 6 ? `<span class="s">Y ${gs.length - 6} más en este periodo · total ${money0(pers + cit)}</span>` : ""}` : '<span class="s">Anota lo que gastas fuera del plan (comida, Rappi, salidas) y el número de arriba se ajusta solo.</span>'}`;
+    ${rows ? `<div class="glist">${rows}</div>${gs.length > 6 ? `<span class="s">Y ${gs.length - 6} más en este periodo · total ${money0(pers)}</span>` : ""}` : '<span class="s">Anota lo que gastas fuera del plan (comida, Rappi, salidas) y el número de arriba se ajusta solo.</span>'}`;
 }
 
 function renderHoy(R) {
@@ -1104,8 +1095,8 @@ function moneySplit(p) {
   const loose = p.tcSubs.filter(s => !s.inEvent).reduce((s, x) => s + x.amount, 0);
   const rows = [
     { k: "Deudas", v: p.debt + p.subs - loose, c: "var(--accent)", s: "" },
-    { k: "Transporte y citas", v: p.transporte + p.citas, c: "var(--bar)", s: "" },
-    { k: p.extra || p.crunchy || p.otros || loose ? "Suscripciones y extras" : "Suscripciones", v: p.debito + loose + p.crunchy + p.extra + p.otros, c: "var(--blue)", op: .45, s: p.extra ? "incluye Acapulco" : "" },
+    { k: "Transporte", v: p.transporte, c: "var(--bar)", s: "" },
+    { k: p.crunchy || p.otros || loose ? "Suscripciones y extras" : "Suscripciones", v: p.debito + loose + p.crunchy + p.otros, c: "var(--blue)", op: .45, s: "" },
     { k: "Te queda libre", v: p.free, c: "var(--ok)", s: "" },
   ].filter(r => r.v);
   const base = Math.max(p.income, rows.reduce((s, r) => s + Math.max(0, r.v), 0));
@@ -1267,7 +1258,7 @@ function renderAvance() {
     return `<div class="stage ${cls}">
       <div class="sdate" aria-hidden="true">${miniRing(pc / 100, cls === "done" ? "var(--ok)" : cls === "now" ? "var(--accent)" : "var(--bar)", 58, 5, `<small>${MES[dM(p.start) - 1]}</small><b style="font-family:var(--f-display); font-size:1rem">${dD(p.start)}</b>`)}</div>
       <div class="sbody">
-        <div class="stop"><b>${esc(p.n === 1 ? "Arranque" : p.name)}</b>${p.n === CUR ? '<span class="tag liq">Ahora</span>' : ""}${p.aguinaldo ? '<span class="tag">+ aguinaldo</span>' : ""}${p.extra ? '<span class="tag">Acapulco</span>' : ""}<span class="sright"><b>${money0(p.remaining)}</b><span>queda al ${fmtD(p.end)}</span></span></div>
+        <div class="stop"><b>${esc(p.n === 1 ? "Arranque" : p.name)}</b>${p.n === CUR ? '<span class="tag liq">Ahora</span>' : ""}${p.aguinaldo ? '<span class="tag">+ aguinaldo</span>' : ""}<span class="sright"><b>${money0(p.remaining)}</b><span>queda al ${fmtD(p.end)}</span></span></div>
         <div class="smeta"><span>Pagas <b class="mono">${money0(p.debt)}</b></span><span>Te queda <b class="mono">${money0(p.free)}</b></span></div>
         ${ends.length || p.n === zcP ? `<div class="xfer">${ends.length ? '<span class="xl">Terminan:</span>' : ""}${ends.map(n => `<span class="pill">${esc(n)}</span>`).join("")}${p.n === zcP ? '<span class="pill goal">Meta: sin préstamos ni tarjetas caras</span>' : ""}</div>` : ""}
         <div class="sbar" aria-hidden="true"><i style="width:${pc}%"></i></div>
@@ -1278,13 +1269,6 @@ function renderAvance() {
   $("stages").innerHTML = st + `<div class="stage final">
       <div class="sdate" aria-hidden="true">${miniRing(1, "var(--ok)", 58, 5, `<small>${zAll ? MES[dM(zAll) - 1] : "—"}</small><b style="font-family:var(--f-display); font-size:1rem">${zAll ? dD(zAll) : "—"}</b>`)}</div>
       <div class="sbody"><div class="stop"><b>Deuda cero</b><span class="sright"><b class="c-ok">$0</b><span>100%</span></span></div><span class="muted" style="font-size:.85rem">${zAll ? fullDate(zAll) + ". " : ""}${S.aj.banamexLiquidar ? "Todo pagado, Banamex incluido." : "El último pago es Banamex; antes de eso ya no debes nada caro."}</span></div></div>`;
-  // viajes
-  const p1 = P.periods[0], p2 = P.periods[1], p4 = P.periods[3];
-  $("trips").innerHTML = `
-    <div class="card verdict"><span class="vpill ${p2.cum >= 0 ? "wait" : "no"}">${p2.cum >= 0 ? "Sí, después del 28 oct" : "No por ahora"}</span><h3>Kayak en Xochimilco</h3>
-      <p style="font-size:.9rem">Antes del 28 no: te quedan <b class="mono">${money0(p1.free)}</b> para tres semanas. Desde la nómina sí: entra en los <b class="mono">${money0(p2.citas)}</b> de citas.</p></div>
-    <div class="card verdict"><span class="vpill ${p4.cum >= 0 && p4.free >= 0 ? "yes" : "no"}">${p4.cum >= 0 && p4.free >= 0 ? "Sí, en enero" : "Ajusta el monto"}</span><h3>Acapulco</h3>
-      <p style="font-size:.9rem">Tu parte (<b class="mono">${money0(p4.extra)}</b>) sale de la nómina del 28 de diciembre y aún te quedan <b class="mono">${money0(p4.free)}</b> libres. De contado, nunca con tarjeta.</p></div>`;
 }
 
 function renderChart() {
@@ -1330,7 +1314,7 @@ function renderMas() {
 }
 
 /* ---------- Ajustes ---------- */
-const FIELDS = ["otros", "acapulco"];
+const FIELDS = ["otros"];
 function syncForm() {
   FIELDS.forEach(f => { const el = $(f); if (document.activeElement !== el) el.value = S.aj[f]; });
   $("banamexLiquidar").checked = !!S.aj.banamexLiquidar;
@@ -1350,7 +1334,7 @@ $("resetBtn").addEventListener("click", () => { S.aj = { ...DEFAULT_AJ }; syncFo
 document.addEventListener("submit", async ev => {
   if (ev.target.id !== "spendForm") return;
   ev.preventDefault();
-  const m = $("gMonto"), ok = await addGasto(m.value, S.gTipo, $("gNota").value);
+  const m = $("gMonto"), ok = await addGasto(m.value, "personal", $("gNota").value);
   if (ok) { const f = $("gMonto"); if (f) f.focus(); } else m.focus();
 });
 document.addEventListener("toggle", ev => { const d = ev.target; if (!d.matches) return;
@@ -1383,7 +1367,6 @@ document.addEventListener("click", ev => {
   const m = t.closest("[data-mas]"); if (m) { S.mas = m.dataset.mas; showTab(); return; }
   const p = t.closest("[data-pay]"); if (p) { markPaid(S.ev[p.dataset.pay], true); return; }
   const dg = t.closest("[data-delg]"); if (dg) { delGasto(dg.dataset.delg); return; }
-  const gt = t.closest("[data-gtipo]"); if (gt) { S.gTipo = gt.dataset.gtipo; document.querySelectorAll("[data-gtipo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.gtipo === S.gTipo))); return; }
   const b = t.closest("[data-bar]"); if (b) { S.chartSel = Number(b.dataset.bar); renderChart(); return; }
 });
 document.addEventListener("keydown", ev => {
